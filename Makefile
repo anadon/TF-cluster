@@ -10,7 +10,7 @@ OBJECTS=main.o auxillaryUtilities.o nodeNetwork.o gEdge.o gNode.o
 all:$(OBJECTS)
 	$(CPP) $(CFLAGS) $(LIBS) $(OBJECTS) -o $(EXEC)
 
-main.o:main.cpp pairTable.hpp auxillaryUtilities.hpp
+main.o:main.cpp nodeNetwork.hpp auxillaryUtilities.hpp
 	$(CPP) $(CFLAGS) -c main.cpp
 
 auxillaryUtilities.o:auxillaryUtilities.cpp auxillaryUtilities.hpp
