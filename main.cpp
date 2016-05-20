@@ -5,6 +5,7 @@ to improve the time and space requirements over the perl implementation.
 Input: 1 file name or input from stdin.
 ***********************************************************************/
 #include <stdio.h>
+#include <math.h>
 
 #include "auxillaryUtilities.hpp"
 #include "nodeNetwork.hpp"
@@ -21,11 +22,22 @@ Input: 1 file name or input from stdin.
 
 
 double calculateSigma(const gEdge ** links, const size_t numEdges){
-  double toReturn = 0;
+  double mean;
+  double meanOfSquareDifferences;
   
+  mean = 0;
+  for(size_t i = 0; i < numEdges; i++)
+    mean += links[i]->coeff;
+  mean /= numEdges;
   
+  meanOfSquareDifferences = 0;
+  for(size_t i = 0; i < numEdges; i++){
+    double difference = links[i]->coeff - mean;
+    meanOfSquareDifferences += (difference * difference);
+  }
+  meanOfSquareDifferences /= numEdges;
   
-  return toReturn;
+  return sqrt(meanOfSquareDifferences);
 }
 
 

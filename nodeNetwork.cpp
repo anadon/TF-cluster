@@ -90,10 +90,10 @@ void nodeNetwork::addEdge(gNode *left, gNode *right, double coeff){
 }
 
 
-inline const gEdge** nodeNetwork::getEdges(){
-  return edgeArray;
+const gEdge** nodeNetwork::getEdges(){
+  return (const gEdge**) edgeArray;
 }
 
-inline const size_t nodeNetwork::getNumEdges(){
+const size_t nodeNetwork::getNumEdges(){
   return numEdges;
 }
