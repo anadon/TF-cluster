@@ -1,3 +1,6 @@
+/***********************************************************************
+
+***********************************************************************/
 #ifndef NODENETWORK_HPP
 #define NODENETWORK_HPP
 
@@ -34,6 +37,10 @@ class nodeNetwork{
   int loadFromFile(FILE *input);
   
   void prune(u8 keepTopN = 100);
+  
+  const gEdge** getEdges();
+  
+  const size_t getNumEdges();
 };
 
 #endif

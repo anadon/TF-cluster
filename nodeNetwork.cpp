@@ -88,3 +88,12 @@ void nodeNetwork::addEdge(gNode *left, gNode *right, double coeff){
   geneNameToNodeID.emplace(left->geneID, numEdges);
   edgeArray[numNodes] = new gEdge(left, right, coeff);
 }
+
+
+inline const gEdge** nodeNetwork::getEdges(){
+  return edgeArray;
+}
+
+inline const size_t nodeNetwork::getNumEdges(){
+  return numEdges;
+}

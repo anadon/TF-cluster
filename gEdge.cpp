@@ -14,6 +14,6 @@ gEdge::gEdge(gNode *newLeft, gNode *newRight, size_t myID){
 
 
 gEdge::~gEdge(){
-  left->removeEdge(leftEdgeIndex);
-  right->removeEdge(rightEdgeIndex);
+  left->removeEdge(this);
+  right->removeEdge(this);
 }

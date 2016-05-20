@@ -1,3 +1,6 @@
+/***********************************************************************
+
+***********************************************************************/
 #ifndef GNODE_HPP
 #define GNODE_HPP
 
@@ -27,9 +30,15 @@ class gNode{
 
   size_t addEdge(gEdge *toRegister);
 
-  void removeEdge(size_t edgeIndex);
+  void removeEdge(gEdge *toRemove);
 
   void prune(u8 keepTopN);
+  
+  private:
+  void quickMergeEdges(gEdge **toSort, const size_t size);
+  
+  void mergeHelper(gEdge **toSort, const size_t leftIndex, 
+                        const size_t rightIndex, const size_t endIndex);
   
 };
 

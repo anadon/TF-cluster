@@ -20,6 +20,15 @@ Input: 1 file name or input from stdin.
 //}
 
 
+double calculateSigma(const gEdge ** links, const size_t numEdges){
+  double toReturn = 0;
+  
+  
+  
+  return toReturn;
+}
+
+
 int main(int argc, char **argv){
   
   int error = verifyInput(argc, argv);
@@ -30,6 +39,7 @@ int main(int argc, char **argv){
   fclose(stdin);
   
   corrData.prune();
+  double sigma = calculateSigma(corrData.getEdges(), corrData.getNumEdges());
   //corrData.prepareTripleLink();
   //corrData.TripleLink();
   
