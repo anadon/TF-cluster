@@ -6,23 +6,18 @@
 
 #include <unistd.h>
 
-#include "auxillaryUtilities.hpp"
 
+template <typename T, typename U> class vertex;
 
-class gNode;
-
-class gEdge{
+template <typename T, typename U> class edge{
   public:
   size_t leftEdgeIndex, rightEdgeIndex, edgeID;
-  gNode *left, *right;
-  union{
-    double coeff;
-    u8 sigma;
-  };
+  vertex<T, U> *left, *right;
+  U weight;
 
-  gEdge(gNode *newLeft, gNode *newRight, size_t myID);
+  edge(vertex<T, U> *newLeft, vertex<T, U> *newRight, U newWeight);
 
-  ~gEdge();
+  ~edge();
 };
 
 #endif
