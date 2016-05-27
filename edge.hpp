@@ -6,6 +6,8 @@
 
 #include <unistd.h>
 
+#include "auxillaryUtilities.hpp"
+
 
 template <typename T, typename U> class vertex;
 
@@ -18,6 +20,8 @@ template <typename T, typename U> class edge{
   edge(vertex<T, U> *newLeft, vertex<T, U> *newRight, U newWeight);
 
   ~edge();
+  
+  vertex<T, U>* other(const vertex<T, U> *side);
 };
 
 #endif

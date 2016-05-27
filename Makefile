@@ -4,8 +4,8 @@ CFLAGS=-g -O0 -pipe -Wall -std=c++0x
 
 EXEC=TF-cluster
 
-SOURCES=main.cpp auxillaryUtilities.cpp
-OBJECTS=main.o   auxillaryUtilities.o
+SOURCES=main.cpp auxillaryUtilities.cpp tripleLink.cpp geneData.cpp
+OBJECTS=main.o   auxillaryUtilities.o   tripleLink.o   geneData.o
 
 all:$(OBJECTS)
 	$(CPP) $(CFLAGS) $(LIBS) $(OBJECTS) -o $(EXEC)
@@ -15,6 +15,12 @@ main.o:main.cpp graph.hpp auxillaryUtilities.hpp
 
 auxillaryUtilities.o:auxillaryUtilities.cpp auxillaryUtilities.hpp
 	$(CPP) $(CFLAGS) -c auxillaryUtilities.cpp
+
+tripleLink.o:tripleLink.cpp tripleLink.hpp graph.hpp
+	$(CPP) $(CFLAGS) -c tripleLink.cpp
+
+geneData.o:geneData.cpp geneData.hpp
+	$(CPP) $(CFLAGS) -c geneData.cpp
 
 clean:
 	rm -f $(OBJECTS)

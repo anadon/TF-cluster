@@ -23,11 +23,15 @@ template <typename T, typename U> class vertex{
 
   vertex(size_t ID);
 
+  vertex(size_t ID, T value);
+
   ~vertex();
 
   size_t addEdge(edge<T, U> *toRegister);
 
   void removeEdge(edge<T, U> *toRemove);
+  
+  bool operator==(const vertex<T, U> &other) const;
   
 };
 

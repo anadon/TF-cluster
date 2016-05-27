@@ -11,6 +11,14 @@ template <typename T, typename U> vertex<T, U>::vertex(size_t ID){
 }
 
 
+template <typename T, typename U> vertex<T, U>::vertex(size_t ID, T newValue){
+  nodeID = ID;
+  numEdges = 0;
+  edges = (edge<T, U>**) NULL;
+  value = newValue;
+}
+
+
 template <typename T, typename U> vertex<T, U>::~vertex(){
   for(size_t i = numEdges-1; i < numEdges; i--)
     removeEdge(edges[i]);
@@ -67,3 +75,6 @@ template <typename T, typename U> void vertex<T, U>::removeEdge(edge<T, U> *toRe
 }
 
 
+template <typename T, typename U> inline bool vertex<T, U>::operator==(const vertex<T, U> &other) const{
+  return (value == other.value);
+}

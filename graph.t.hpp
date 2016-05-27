@@ -7,7 +7,7 @@ using std::unordered_map;
 
 
 template <typename T, typename U> graph<T, U>::graph(){
-  numNodes = numEdges = 0;
+  numVertexes = numEdges = 0;
   vertexArray = (vertex<T, U>**) NULL;
   edgeArray = (edge<T, U>**) NULL;
 }
@@ -16,7 +16,7 @@ template <typename T, typename U> graph<T, U>::graph(){
 template <typename T, typename U> graph<T, U>::~graph(){
   for(size_t i = 0; i < numEdges; i++)
     removeEdge(edgeArray[i]);
-  for(size_t i = 0; i < numNodes; i++)
+  for(size_t i = 0; i < numVertexes; i++)
     removeVertex(vertexArray[i]);
 }
 
@@ -53,34 +53,50 @@ template <typename T, typename U> void graph<T, U>::removeVertex(vertex<T, U> *t
 
 
   delete toRemove;
-  vertexArray[nodeIndex] = vertexArray[--numNodes];
+  vertexArray[nodeIndex] = vertexArray[--numVertexes];
   vertexArray[nodeIndex]->nodeID = nodeIndex;
 
-  vertexArray = (vertex<T, U>**) realloc(vertexArray, sizeof(*vertexArray) * numNodes);
+  vertexArray = (vertex<T, U>**) realloc(vertexArray, sizeof(*vertexArray) * numVertexes);
 }
 
 
 template <typename T, typename U> void graph<T, U>::addVertex(T data){
-  size_t newSize = numNodes + 1;
+  size_t newSize = numVertexes + 1;
   vertexArray = (vertex<T, U>**) realloc(vertexArray, sizeof(*vertexArray) * newSize);
-  geneNameToNodeID.emplace(data, numNodes);
-  vertexArray[numNodes] = new vertex<T, U>(numNodes);
+  geneNameToNodeID.emplace(data, numVertexes);
+  vertexArray[numVertexes] = new vertex<T, U>(numVertexes);
 
-  numNodes = newSize;
+  numVertexes = newSize;
 }
 
 
 template <typename T, typename U> void graph<T, U>::addEdge(vertex<T, U> *left, vertex<T, U> *right, U newWeight){
-
   typename unordered_map<T, size_t>::const_iterator potentialFind;
   potentialFind = geneNameToNodeID.find(right->value);
   if(potentialFind == geneNameToNodeID.end()) return;
-  //TODO if found, exit early
+  
+  potentialFind = geneNameToNodeID.find(left->value);
+  if(potentialFind == geneNameToNodeID.end()) return;
 
   size_t newSize = numEdges + 1;
   edgeArray = (edge<T, U>**) realloc(vertexArray, sizeof(*vertexArray) * newSize);
   geneNameToNodeID.emplace(left->value, numEdges);
-  edgeArray[numNodes] = new edge<T, U>(left, right, newWeight);
+  geneNameToNodeID.emplace(right->value, numEdges);
+  edgeArray[numVertexes] = new edge<T, U>(left, right, newWeight);
+}
+
+
+template <typename T, typename U> void graph<T, U>::addEdge(const edge<T, U> &toAdd){
+  typename unordered_map<T, size_t>::const_iterator findLeft, findRight, endItr;
+  findLeft = geneNameToNodeID.find(toAdd.left->value);
+  findRight = geneNameToNodeID.find(toAdd.right->value);
+  endItr = geneNameToNodeID.end();
+  
+  if(findLeft == endItr || findRight == endItr) exit(1);
+
+  size_t newSize = numEdges + 1;
+  edgeArray = (edge<T, U>**) realloc(vertexArray, sizeof(*vertexArray) * newSize);
+  edgeArray[numVertexes] = new edge<T, U>(vertexArray[findLeft.second], vertexArray[findRight.second], toAdd.weight);
 }
 
 
@@ -88,6 +104,45 @@ template <typename T, typename U> const edge<T, U>** graph<T, U>::getEdges(){
   return (const edge<T, U>**) edgeArray;
 }
 
-template <typename T, typename U> const size_t graph<T, U>::getNumEdges(){
+
+template <typename T, typename U> const size_t graph<T, U>::getNumEdges() const{
   return numEdges;
+}
+
+
+template <typename T, typename U> const vertex<T, U>** graph<T, U>::getVertexes(){
+  return (const vertex<T, U>**) vertexArray;
+}
+
+
+template <typename T, typename U> const size_t graph<T, U>::getNumVertexes() const{
+  return numVertexes;
+}
+
+
+template <typename T, typename U> void graph<T, U>::addVertex(const vertex<T, U> &newVertex){
+  const size_t newSize = numVertexes + 1;
+  vertexArray = (vertex<T, U>**) realloc(vertexArray, sizeof(*vertexArray) * newSize);
+  geneNameToNodeID.emplace(newVertex.value, numVertexes);
+  vertexArray[numVertexes] = new vertex<T, U>(numVertexes, newVertex.value);
+  
+  numVertexes = newSize;
+}
+
+
+template <typename T, typename U> graph<T, U>& graph<T, U>::operator=(const graph<T, U> &other) const{
+  graph<T, U> toReturn;
+  for(size_t i = 0; i < this->numVertexes; i++)
+    toReturn.addVertex(*(this->vertexArray[i]));
+  
+  for(size_t i = 0; i < this->numEdges; i++){
+    toReturn.addEdge(*(this->edgeArray[i]));
+  }
+  
+  return toReturn;
+}
+
+
+template <typename T, typename U> vertex<T, U>* graph<T, U>::getVertexForValue(const T testValue){
+  return vertexArray[geneNameToNodeID.at(testValue)];
 }
