@@ -43,9 +43,9 @@ template <typename T, typename U> class graph{
   
   const vertex<T, U>** getVertexes();
 
-  const size_t getNumEdges() const;
+  size_t getNumEdges() const;
 
-  const size_t getNumVertexes() const;
+  size_t getNumVertexes() const;
   
   graph<T, U>& operator=(const graph<T, U> &other) const;
 

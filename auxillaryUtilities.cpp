@@ -19,19 +19,22 @@ using std::vector;
 using std::ifstream;
 using std::endl;
 using std::cout;
-using std::cerr;
+using std::cout;
 
 
-std::vector<string> tokenizeString(char *input, const char *delimitors){
+vector<string> tokenizeString(string toTokenize, const char *delimitors){
   vector<string> tr;
-  char *tokenStart;
-
-
-  tokenStart = strtok(input, delimitors);
-
-  while(tokenStart){
-    tr.push_back(string(tokenStart));
-    tokenStart = strtok(NULL, delimitors);
+  char *tokenStart, *inputCopy;
+  size_t begin, end, diffLen;
+  
+  begin = 0;
+  
+  while(string::npos != begin){
+    end = toTokenize.find_first_of(delimitors, begin);
+    if(string::npos != end) diffLen = end - begin;
+    else diffLen = end;
+    tr.push_back(toTokenize.substr(begin, diffLen);
+    begin = end;
   }
 
   return tr;
@@ -52,7 +55,7 @@ int verifyInput(int argc, char **argv){
 }
 
 
-void loadFromFile(graph<struct geneData, double> *geneNetwork, 
+void loadFromFile(graph<geneData, double> *geneNetwork, 
                             string geneListFile, string expressionFile){
   
   vector<string> geneList;
@@ -63,14 +66,20 @@ void loadFromFile(graph<struct geneData, double> *geneNetwork,
   geneListReader.open(geneListFile);
   
   if(!geneListReader.good()){
-    cerr << "could not access \"" << geneListFile << "\"" << endl;
+    cout << "could not access \"" << geneListFile << "\"" << endl;
     exit(1);
   }
   
   while(geneListReader.good()){
-    struct geneData newGene;
-    geneListReader >> newGene.name;
+    string geneName;
+    geneListReader >> geneName;
+    geneData newGene(geneName);
+    if(newGene.name == ""){
+      cout << "WARNING: empty gene name!" << endl;
+      continue;
+    }
     geneList.push_back(newGene.name);
+    cout << "Registered gene \"" << newGene.name << "\"" << endl;
     geneNetwork->addVertex(newGene);
   }
   geneListReader.close();
@@ -78,27 +87,47 @@ void loadFromFile(graph<struct geneData, double> *geneNetwork,
   exprCoeffReader.open(expressionFile);
   
   if(!exprCoeffReader.good()){
-    cerr << "could not access \"" << expressionFile << "\"" << endl;
+    cout << "could not access \"" << expressionFile << "\"" << endl;
     exit(1);
   }
   
   while(exprCoeffReader.good()){
     string rightVertexName;
-    struct geneData testValue;
-    vertex<struct geneData, double> *leftVertex;
+    vertex<geneData, double> *leftVertex, *rightVertex;
+    vector<string> lineTokens;
+    string line;
     
-    exprCoeffReader >> testValue.name;
+    getline(exprCoeffReader, line);
+    lineTokens = tokenizeString(line, " \t,");
     
-    const size_t loopSize = geneList.size();
+    geneData testValue(lineTokens[0]);
+    
     leftVertex = geneNetwork->getVertexForValue(testValue);
+    if(NULL == leftVertex){
+      cout << "Cannot find gene \"" << testValue.name 
+           << "\" in list of genes; Skipping row" << endl;
+      continue;
+    }
     
-    for(size_t i = 0; i < loopSize; i++){
+    for(size_t i = 1; i < lineTokens.size(); i++){
       double weight;
+      string weightString;
       
-      exprCoeffReader >> weight;
+      weightString = lineTokens[i];
+      weight = atof(weightString.c_str());
+      if(0 == weight){
+        cout << "Likely error converting \"" << weightString 
+             << "\" to double" << endl;
+      }
+      
       testValue.name = geneList[i];
+      rightVertex = geneNetwork->getVertexForValue(testValue);
       
-      geneNetwork->addEdge(leftVertex, geneNetwork->getVertexForValue(testValue), weight);
+      if(NULL == rightVertex){
+        cout << "Error looking up known good vertex!" << endl;
+        exit(1);
+      }
+      geneNetwork->addEdge(leftVertex, rightVertex, weight);
     }
   }
   exprCoeffReader.close();
@@ -106,7 +135,7 @@ void loadFromFile(graph<struct geneData, double> *geneNetwork,
 }
 
 
-void pruneGraph(graph<struct geneData, double> *geneNetwork, u8 keepTopN){
+void pruneGraph(graph<geneData, double> *geneNetwork, u8 keepTopN){
 
   for(size_t i = 0; i < geneNetwork->numVertexes; i++){
     quickMergeEdges(geneNetwork->vertexArray[i], geneNetwork->vertexArray[i]->numEdges);
@@ -119,19 +148,23 @@ void pruneGraph(graph<struct geneData, double> *geneNetwork, u8 keepTopN){
 }
 
 
-void quickMergeEdges(vertex<struct geneData, double> *toPrune,
+void quickMergeEdges(vertex<geneData, double> *toPrune,
                                                     const size_t size){
   size_t numRising;
   size_t i;
 
   numRising = 0;
 
-  for(i = 0; i < size-1; i++)
-    if(toPrune->edges[i]->weight < toPrune->edges[i+1]->weight) numRising++;
+  for(i = 0; i < size-1; i++){
+    double prev, next;
+    prev = toPrune->edges[i]->weight;
+    next = toPrune->edges[i+1]->weight;
+    if(prev < next) numRising++;
+  }
 
   if(numRising > (size >> 1)){
     //reverse so that more are in order
-    edge<struct geneData, double> *tmp;
+    edge<geneData, double> *tmp;
     for(i = 0; i < size/2; i++){
       tmp = toPrune->edges[i];
       toPrune->edges[i] = toPrune->edges[(size-1) - i];
@@ -163,12 +196,12 @@ void quickMergeEdges(vertex<struct geneData, double> *toPrune,
 }
 
 
-void mergeHelper(edge<struct geneData, double> **toSort, const size_t leftIndex,
+void mergeHelper(edge<geneData, double> **toSort, const size_t leftIndex,
                         const size_t rightIndex, const size_t endIndex){
   size_t leftParser, rightParser, mergedParser;
-  edge<struct geneData, double> **sortSpace;
+  edge<geneData, double> **sortSpace;
 
-  sortSpace = (edge<struct geneData, double>**) malloc(sizeof(*sortSpace) * (endIndex - leftIndex));
+  sortSpace = (edge<geneData, double>**) malloc(sizeof(*sortSpace) * (endIndex - leftIndex));
 
   leftParser = leftIndex;
   rightParser = rightIndex;
@@ -183,7 +216,7 @@ void mergeHelper(edge<struct geneData, double> **toSort, const size_t leftIndex,
 }
 
 
-double calculateSigma(const edge<struct geneData, double> ** links,
+double calculateSigma(const edge<geneData, double> ** links,
                                                 const size_t numEdges){
   double mean;
   double meanOfSquareDifferences;
@@ -204,13 +237,13 @@ double calculateSigma(const edge<struct geneData, double> ** links,
 }
 
 
-void convertCoeffToSigmaValue(graph<struct geneData, double> *geneNetwork, double sigma){
+void convertCoeffToSigmaValue(graph<geneData, double> *geneNetwork, double sigma){
   for(size_t i = 0; i < geneNetwork->numEdges; i++)
     geneNetwork->edgeArray[i]->weight /= sigma;
 }
 
 
-void removeLowEdges(graph<struct geneData, double> *geneNetwork, 
+void removeLowEdges(graph<geneData, double> *geneNetwork, 
                                                   const double &cutOff){
   for(size_t i = 0; i < geneNetwork->numEdges; i++)
     if(geneNetwork->edgeArray[i]->weight < cutOff)
@@ -218,7 +251,7 @@ void removeLowEdges(graph<struct geneData, double> *geneNetwork,
 }
 
 
-void removeWeakVerticies(graph<struct geneData, double> *geneNetwork){
+void removeWeakVerticies(graph<geneData, double> *geneNetwork){
   //first, we need to remove all nodes which do not have 3 available
   //links.  It's technically possible, and technically possible for new
   //ones to occur after a given removal so this is expensive...
@@ -245,7 +278,7 @@ void removeWeakVerticies(graph<struct geneData, double> *geneNetwork){
 
 
 void simpleError(const char *message){
-  cerr << "Error: " << message << endl;
+  cout << "Error: " << message << endl;
 }
 
 
@@ -273,48 +306,70 @@ struct config loadConfig(){
   while(getline(configFile, line)){
     if(0 == line.size()) continue;
     if('#' == line[0]) continue;
-    if(string::npos != line.find("geneListFile")){
-      size_t startIndex = line.find("=");
+    if(string::npos != line.find("geneList")){
+      size_t startIndex = line.find("=") + 1;
       size_t endIndex = line.find("#");
-      settings.geneListFile = line.substr(startIndex, endIndex - startIndex);
+      if(string::npos == endIndex) endIndex = line.size();
+      string readValue = line.substr(startIndex, endIndex - startIndex);
+      cout << "setting geneList to " << readValue << endl;
+      settings.geneListFile = readValue;
       continue;
     }
-    if(string::npos != line.find("expressionFile")){
-      size_t startIndex = line.find("=");
+    if(string::npos != line.find("expression")){
+      size_t startIndex = line.find("=") + 1;
       size_t endIndex = line.find("#");
-      settings.expressionFile = line.substr(startIndex, endIndex - startIndex);
+      if(string::npos == endIndex) endIndex = line.size();
+      string readValue = line.substr(startIndex, endIndex - startIndex);
+      cout << "setting expression to " << readValue << endl;
+      settings.expressionFile = readValue;
       continue;
     }
     if(string::npos != line.find("topPick")){
-      size_t startIndex = line.find("=");
+      size_t startIndex = line.find("=") + 1;
       size_t endIndex = line.find("#");
-      settings.topPick = atoi(line.substr(startIndex, endIndex - startIndex).c_str());
+      if(string::npos == endIndex) endIndex = line.size();
+      string readValue = line.substr(startIndex, endIndex - startIndex);
+      cout << "setting topPick to " << readValue << endl;
+      settings.topPick = atoi(readValue.c_str());
       continue;
     }
     if(string::npos != line.find("kickSize")){
-      size_t startIndex = line.find("=");
+      size_t startIndex = line.find("=") + 1;
       size_t endIndex = line.find("#");
-      settings.kickSize = atoi(line.substr(startIndex, endIndex - startIndex).c_str());
+      if(string::npos == endIndex) endIndex = line.size();
+      string readValue = line.substr(startIndex, endIndex - startIndex);
+      cout << "setting kickSize to " << readValue << endl;
+      settings.kickSize = atoi(readValue.c_str());
       continue;
     }
     if(string::npos != line.find("tripleLink1")){
-      size_t startIndex = line.find("=");
+      size_t startIndex = line.find("=") + 1;
       size_t endIndex = line.find("#");
-      settings.tripleLink1 = atof(line.substr(startIndex, endIndex - startIndex).c_str());
+      if(string::npos == endIndex) endIndex = line.size();
+      string readValue = line.substr(startIndex, endIndex - startIndex);
+      cout << "setting tripleLink1 to " << readValue << endl;
+      settings.tripleLink1 = atof(readValue.c_str());
       continue;
     }
     if(string::npos != line.find("tripleLink2")){
-      size_t startIndex = line.find("=");
-      size_t endIndex = line.find("#");
-      settings.tripleLink2 = atof(line.substr(startIndex, endIndex - startIndex).c_str());
+      size_t startIndex = line.find("=") + 1;
+      size_t endIndex = line.find("#") + 1;
+      if(string::npos == endIndex) endIndex = line.size();
+      string readValue = line.substr(startIndex, endIndex - startIndex);
+      cout << "setting tripleLink2 to " << readValue << endl;
+      settings.tripleLink2 = atof(readValue.c_str());
       continue;
     }
     if(string::npos != line.find("tripleLink3")){
-      size_t startIndex = line.find("=");
+      size_t startIndex = line.find("=") + 1;
       size_t endIndex = line.find("#");
-      settings.tripleLink3 = atof(line.substr(startIndex, endIndex - startIndex).c_str());
+      if(string::npos == endIndex) endIndex = line.size();
+      string readValue = line.substr(startIndex, endIndex - startIndex);
+      cout << "setting tripleLink3 to " << readValue << endl;
+      settings.tripleLink3 = atof(readValue.c_str());
       continue;
     }
+    cout << "Skipped line \"" << line << "\"" << endl;
   }
   configFile.close();
   
@@ -331,9 +386,9 @@ struct config loadConfig(){
     errorInFile = true;
   }
   
-  cout << "topPick: " << settings.topPick << endl;
+  cout << "topPick is " << (short) settings.topPick << endl;
   
-  cout << "kickSize: " << settings.kickSize << endl;
+  cout << "kickSize is " << settings.kickSize << endl;
   
   if(settings.tripleLink1 < 0){
     simpleError("tripleLink1 is less than 0");
@@ -364,4 +419,32 @@ struct config loadConfig(){
 
   
   return settings;
+}
+
+
+void printClusters(vector< graph<geneData, double>* > clusters){
+  for(size_t i = 0; i < clusters.size(); i++){
+    cout << "Cluster " << (i+1) << ": " << endl;
+    for(size_t j = 0; j < clusters[i]->numVertexes; j++){
+      cout << clusters[i]->getVertexes()[j]->value.name << endl;
+    }
+    cout << endl;
+  }
+}
+
+
+void printEdges(graph<geneData, double> *corrData){
+  string left, right;
+  double weight;
+  
+  cout << "Here are all the edges in the graph:" << endl;
+  
+  for(size_t i = 0; i < corrData->numEdges; i++){
+    left = corrData->getEdges()[i]->left->value.name;
+    right = corrData->getEdges()[i]->right->value.name;
+    weight = corrData->getEdges()[i]->weight;
+    cout << left << " <--" << weight << "--> " << right << endl;
+  }
+  
+  cout << endl;
 }

@@ -5,23 +5,29 @@
 #include <unordered_map>
 
 
+using std::string;
+
 
 class geneData{
   public:
-  std::string name;
+  string name;
   bool threeSigmaLink;
   bool twoSigmaLink;
   bool oneSigmaLink;
+  
+  geneData();
+  
+  geneData(string geneName);
 
   bool operator==(const geneData &other) const;
 };
 
 namespace std{
-template <> struct hash<geneData> {
-  size_t operator()(const geneData& toHash) const {
-    return (hash<string>()(toHash.name));
-  }
-};
+  template <> struct hash<geneData> {
+    std::size_t operator()(geneData const& toHash) const {
+      return std::hash<std::string>()(toHash.name);
+    }
+  };
 }
 
 #endif

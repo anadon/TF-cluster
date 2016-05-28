@@ -15,20 +15,21 @@ Input: 1 file name or input from stdin.
 
 
 int main(int argc, char **argv){
-  graph<struct geneData, double> *corrData;
+  graph<geneData, double> *corrData;
   double sigma;
   struct config settings;
   int error;
-  vector< graph<struct geneData, double>* > result;
+  vector< graph<geneData, double>* > result;
 
   error = verifyInput(argc, argv);
   if(error) return error;
 
   settings = loadConfig();
 
-  corrData = new graph<struct geneData, double>();
+  corrData = new graph<geneData, double>();
   loadFromFile(corrData, settings.geneListFile, settings.expressionFile);
   
+  //printEdges(corrData);
 
   pruneGraph(corrData, settings.topPick);
   sigma = calculateSigma(corrData->getEdges(), corrData->getNumEdges());
@@ -40,6 +41,8 @@ int main(int argc, char **argv){
   
   result = tripleLink(corrData, settings.tripleLink1, 
                             settings.tripleLink2, settings.tripleLink3);
+  
+  printClusters(result);
   
   delete corrData;
   for(size_t i = 0; i < result.size(); i++){

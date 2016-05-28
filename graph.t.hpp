@@ -1,9 +1,13 @@
 #include <unistd.h>
 #include <stdlib.h>
+#include <iostream>
 
+#include "geneData.hpp"
 #include "graph.hpp"
 
 using std::unordered_map;
+using std::cout;
+using std::endl;
 
 
 template <typename T, typename U> graph<T, U>::graph(){
@@ -65,6 +69,7 @@ template <typename T, typename U> void graph<T, U>::addVertex(T data){
   vertexArray = (vertex<T, U>**) realloc(vertexArray, sizeof(*vertexArray) * newSize);
   geneNameToNodeID.emplace(data, numVertexes);
   vertexArray[numVertexes] = new vertex<T, U>(numVertexes);
+  vertexArray[numVertexes]->value = data;
 
   numVertexes = newSize;
 }
@@ -72,17 +77,25 @@ template <typename T, typename U> void graph<T, U>::addVertex(T data){
 
 template <typename T, typename U> void graph<T, U>::addEdge(vertex<T, U> *left, vertex<T, U> *right, U newWeight){
   typename unordered_map<T, size_t>::const_iterator potentialFind;
-  potentialFind = geneNameToNodeID.find(right->value);
-  if(potentialFind == geneNameToNodeID.end()) return;
-  
   potentialFind = geneNameToNodeID.find(left->value);
-  if(potentialFind == geneNameToNodeID.end()) return;
+  if(potentialFind == geneNameToNodeID.end()){
+    cout << "Could not locate left vertex in graph" << endl;
+    return;
+  }
+  
+  potentialFind = geneNameToNodeID.find(right->value);
+  if(potentialFind == geneNameToNodeID.end()){
+    cout << "Could not locate right vertex in graph" << endl;
+    return;
+  }
 
   size_t newSize = numEdges + 1;
-  edgeArray = (edge<T, U>**) realloc(vertexArray, sizeof(*vertexArray) * newSize);
+  edgeArray = (edge<T, U>**) realloc(edgeArray, sizeof(*edgeArray) * newSize);
   geneNameToNodeID.emplace(left->value, numEdges);
   geneNameToNodeID.emplace(right->value, numEdges);
-  edgeArray[numVertexes] = new edge<T, U>(left, right, newWeight);
+  edgeArray[numEdges] = new edge<T, U>(left, right, newWeight);
+  
+  numEdges = newSize;
 }
 
 
@@ -95,8 +108,10 @@ template <typename T, typename U> void graph<T, U>::addEdge(const edge<T, U> &to
   if(findLeft == endItr || findRight == endItr) exit(1);
 
   size_t newSize = numEdges + 1;
-  edgeArray = (edge<T, U>**) realloc(vertexArray, sizeof(*vertexArray) * newSize);
-  edgeArray[numVertexes] = new edge<T, U>(vertexArray[findLeft.second], vertexArray[findRight.second], toAdd.weight);
+  edgeArray = (edge<T, U>**) realloc(edgeArray, sizeof(*edgeArray) * newSize);
+  edgeArray[numEdges] = new edge<T, U>(vertexArray[findLeft.second], vertexArray[findRight.second], toAdd.weight);
+  
+  numEdges = newSize;
 }
 
 
@@ -105,7 +120,7 @@ template <typename T, typename U> const edge<T, U>** graph<T, U>::getEdges(){
 }
 
 
-template <typename T, typename U> const size_t graph<T, U>::getNumEdges() const{
+template <typename T, typename U> size_t graph<T, U>::getNumEdges() const{
   return numEdges;
 }
 
@@ -115,7 +130,7 @@ template <typename T, typename U> const vertex<T, U>** graph<T, U>::getVertexes(
 }
 
 
-template <typename T, typename U> const size_t graph<T, U>::getNumVertexes() const{
+template <typename T, typename U> size_t graph<T, U>::getNumVertexes() const{
   return numVertexes;
 }
 
@@ -144,5 +159,9 @@ template <typename T, typename U> graph<T, U>& graph<T, U>::operator=(const grap
 
 
 template <typename T, typename U> vertex<T, U>* graph<T, U>::getVertexForValue(const T testValue){
-  return vertexArray[geneNameToNodeID.at(testValue)];
+  typename unordered_map<T, size_t>::const_iterator found;
+  found = geneNameToNodeID.find(testValue);
+  if(geneNameToNodeID.end() != found)
+    return vertexArray[found->second];
+  return ( vertex<T, U>* ) NULL;
 }

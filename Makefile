@@ -1,5 +1,5 @@
 CPP=g++
-CFLAGS=-g -O0 -pipe -Wall -std=c++0x
+CFLAGS=-g -O0 -pipe -Wall -Wextra -std=c++0x
 ##LIBS=
 
 EXEC=TF-cluster
@@ -13,7 +13,7 @@ all:$(OBJECTS)
 main.o:main.cpp graph.hpp auxillaryUtilities.hpp
 	$(CPP) $(CFLAGS) -c main.cpp
 
-auxillaryUtilities.o:auxillaryUtilities.cpp auxillaryUtilities.hpp
+auxillaryUtilities.o:auxillaryUtilities.cpp auxillaryUtilities.hpp graph.t.hpp
 	$(CPP) $(CFLAGS) -c auxillaryUtilities.cpp
 
 tripleLink.o:tripleLink.cpp tripleLink.hpp graph.hpp

@@ -16,14 +16,38 @@ using std::vector;
 //static bool killSignal = false;
 
 
-graph<struct geneData, double>* tripleLinkIteration(graph<struct geneData, double> *geneNetwork,
-                                                size_t targetEdgeIndex){
-  graph<struct geneData, double> *toReturn;
-  toReturn = new graph<struct geneData, double>();
-  edge<struct geneData, double> *initialEdge;
-  vertex<struct geneData, double> *firstVertex, *secondVertex;
+void markConnectedVertex(const double &edgeWeight, 
+            vertex<geneData, double> *toMark, const double &tripleLink1, 
+                  const double &tripleLink2, const double &tripleLink3){
+  if(edgeWeight >= tripleLink1){
+    if(!toMark->value.threeSigmaLink){
+      toMark->value.threeSigmaLink = true;
+    }else if(!toMark->value.twoSigmaLink){
+      toMark->value.twoSigmaLink = true;
+    }else{
+      toMark->value.oneSigmaLink = true;
+    }
+  }else if(edgeWeight >= tripleLink2){
+    if(!toMark->value.twoSigmaLink){
+      toMark->value.twoSigmaLink = true;
+    }else{
+      toMark->value.oneSigmaLink = true;
+    }
+  }else if(edgeWeight >= tripleLink3){
+    toMark->value.oneSigmaLink = true;
+  }
+}
+
+
+graph<geneData, double>* tripleLinkIteration(graph<geneData, double> *geneNetwork,
+                    const double tripleLink1, const double tripleLink2, 
+                const double tripleLink3, const size_t targetEdgeIndex){
+  graph<geneData, double> *toReturn;
+  toReturn = new graph<geneData, double>();
+  edge<geneData, double> *initialEdge;
+  vertex<geneData, double> *firstVertex, *secondVertex;
   
-  queue< vertex<struct geneData, double>* > toProcess;
+  queue< vertex<geneData, double>* > toProcess;
   
   initialEdge = geneNetwork->edgeArray[targetEdgeIndex];
   firstVertex = initialEdge->left;
@@ -33,52 +57,22 @@ graph<struct geneData, double>* tripleLinkIteration(graph<struct geneData, doubl
   toReturn->addVertex(*secondVertex);
   
   for(size_t i = 0; i < firstVertex->numEdges; i++){
-    vertex<struct geneData, double> *connectedVertex;
+    vertex<geneData, double> *connectedVertex;
       
     connectedVertex = firstVertex->edges[i]->other(firstVertex);
-      
-    if(firstVertex->edges[i]->weight >= 3){
-      if(!connectedVertex->value.threeSigmaLink){
-        connectedVertex->value.threeSigmaLink = true;
-      }else if(!connectedVertex->value.twoSigmaLink){
-        connectedVertex->value.twoSigmaLink = true;
-      }else{
-        connectedVertex->value.oneSigmaLink = true;
-      }
-    }else if(firstVertex->edges[i]->weight >= 2){
-      if(!connectedVertex->value.twoSigmaLink){
-        connectedVertex->value.twoSigmaLink = true;
-      }else{
-        connectedVertex->value.oneSigmaLink = true;
-      }
-    }else{
-      connectedVertex->value.oneSigmaLink = true;
-    }
+    
+    markConnectedVertex(firstVertex->edges[i]->weight, connectedVertex,
+                                tripleLink1, tripleLink2, tripleLink3);
   }
   geneNetwork->removeVertex(firstVertex);
   
   for(size_t i = 0; i < secondVertex->numEdges; i++){
-    vertex<struct geneData, double> *connectedVertex;
+    vertex<geneData, double> *connectedVertex;
       
     connectedVertex = secondVertex->edges[i]->other(secondVertex);
-      
-    if(secondVertex->edges[i]->weight >= 3){
-      if(!connectedVertex->value.threeSigmaLink){
-        connectedVertex->value.threeSigmaLink = true;
-      }else if(!connectedVertex->value.twoSigmaLink){
-        connectedVertex->value.twoSigmaLink = true;
-      }else{
-        connectedVertex->value.oneSigmaLink = true;
-      }
-    }else if(secondVertex->edges[i]->weight >= 2){
-      if(!connectedVertex->value.twoSigmaLink){
-        connectedVertex->value.twoSigmaLink = true;
-      }else{
-        connectedVertex->value.oneSigmaLink = true;
-      }
-    }else{
-      connectedVertex->value.oneSigmaLink = true;
-    }
+    
+    markConnectedVertex(secondVertex->edges[i]->weight, connectedVertex,
+                                tripleLink1, tripleLink2, tripleLink3);
     
     if(connectedVertex->value.threeSigmaLink && 
       connectedVertex->value.twoSigmaLink){
@@ -88,14 +82,14 @@ graph<struct geneData, double>* tripleLinkIteration(graph<struct geneData, doubl
   geneNetwork->removeVertex(secondVertex);
   
   while(!toProcess.empty()){
-    vertex<struct geneData, double> *connectedVertex;
+    vertex<geneData, double> *connectedVertex;
     
     connectedVertex = toProcess.front();
     toProcess.pop();
     toReturn->addVertex(*connectedVertex);
     
     for(size_t i = 0; i < connectedVertex->numEdges; i++){
-      vertex<struct geneData, double> *otherVertex;
+      vertex<geneData, double> *otherVertex;
       
       otherVertex = connectedVertex->edges[i]->other(connectedVertex);
       
@@ -105,23 +99,8 @@ graph<struct geneData, double>* tripleLinkIteration(graph<struct geneData, doubl
         continue;
       }
       
-      if(connectedVertex->edges[i]->weight >= 3){
-        if(!otherVertex->value.threeSigmaLink){
-          otherVertex->value.threeSigmaLink = true;
-        }else if(!otherVertex->value.twoSigmaLink){
-          otherVertex->value.twoSigmaLink = true;
-        }else{
-          otherVertex->value.oneSigmaLink = true;
-        }
-      }else if(connectedVertex->edges[i]->weight >= 2){
-        if(!otherVertex->value.twoSigmaLink){
-          otherVertex->value.twoSigmaLink = true;
-        }else{
-          otherVertex->value.oneSigmaLink = true;
-        }
-      }else{
-        otherVertex->value.oneSigmaLink = true;
-      }
+      markConnectedVertex(connectedVertex->edges[i]->weight, otherVertex,
+                                tripleLink1, tripleLink2, tripleLink3);
     
       if(otherVertex->value.threeSigmaLink && 
          otherVertex->value.twoSigmaLink &&
@@ -138,10 +117,10 @@ graph<struct geneData, double>* tripleLinkIteration(graph<struct geneData, doubl
 }
 
 
-vector< graph<struct geneData, double>* > tripleLink(graph<struct geneData, double> *geneNetwork, 
-    double tripleLink1, double tripleLink2, double tripleLink3){
-  vector< graph<struct geneData, double>* > toReturn;
-  vector< vertex<struct geneData, double>* > removePass;
+vector< graph<geneData, double>* > tripleLink(graph<geneData, double> *geneNetwork, 
+    const double tripleLink1, const double tripleLink2, const double tripleLink3){
+  vector< graph<geneData, double>* > toReturn;
+  vector< vertex<geneData, double>* > removePass;
   
   
   //because removal of edges will cause suffling anyways, it is cheaper
@@ -171,7 +150,8 @@ vector< graph<struct geneData, double>* > tripleLink(graph<struct geneData, doub
     }
     if(!foundStrongEdge) break;
     
-    toReturn.push_back(tripleLinkIteration(geneNetwork, targetEdgeIndex));
+    toReturn.push_back(tripleLinkIteration(geneNetwork, targetEdgeIndex, 
+                                tripleLink1, tripleLink2, tripleLink3));
     
     //remove edges that won't be used for triple link --> with sigma 
     //values < 1
