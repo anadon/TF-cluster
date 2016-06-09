@@ -49,7 +49,7 @@ graph<geneData, double>* tripleLinkIteration(graph<geneData, double> *geneNetwor
   
   queue< vertex<geneData, double>* > toProcess;
   
-  initialEdge = geneNetwork->edgeArray[targetEdgeIndex];
+  initialEdge = &geneNetwork->edgeArray[targetEdgeIndex];
   firstVertex = initialEdge->left;
   secondVertex = initialEdge->right;
   
@@ -142,8 +142,8 @@ vector< graph<geneData, double>* > tripleLink(graph<geneData, double> *geneNetwo
     double maxFoundValue = 3;
     
     for(size_t i = 0; i < geneNetwork->numEdges; i++){
-      if(geneNetwork->edgeArray[i]->weight >= maxFoundValue){
-        maxFoundValue = geneNetwork->edgeArray[i]->weight;
+      if(geneNetwork->edgeArray[i].weight >= maxFoundValue){
+        maxFoundValue = geneNetwork->edgeArray[i].weight;
         targetEdgeIndex = i;
         foundStrongEdge = true;
       }

@@ -1,5 +1,6 @@
 CPP=g++
-CFLAGS=-g -O0 -pipe -Wall -Wextra -std=c++0x
+##CFLAGS=-g -O0 -pthread -pipe -flto -Wall -Wextra -std=c++0x
+CFLAGS=-O3 -pthread -pipe -flto -Wall -Wextra -std=c++0x
 ##LIBS=
 
 EXEC=TF-cluster

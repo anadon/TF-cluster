@@ -4,6 +4,7 @@
 #ifndef NODENETWORK_HPP
 #define NODENETWORK_HPP
 
+#include <mutex>
 #include <stdlib.h>
 #include <unistd.h>
 #include <unordered_map>
@@ -12,14 +13,16 @@
 #include "vertex.hpp"
 
 using std::unordered_map;
+using std::mutex;
 
 
 template <typename T, typename U> class graph{
   public:
-  vertex<T, U> **vertexArray;
-  edge<T, U> **edgeArray;
+  vertex<T, U> *vertexArray;
+  edge<T, U> *edgeArray;
   size_t numVertexes, numEdges;
   unordered_map<T, size_t> geneNameToNodeID;
+  mutex edgeGuard, vertexGuard;
 
 
   graph();
@@ -39,15 +42,15 @@ template <typename T, typename U> class graph{
   
   vertex<T, U>* getVertexForValue(const T testValue);
 
-  const edge<T, U>** getEdges();
+  const edge<T, U>* getEdges();
   
-  const vertex<T, U>** getVertexes();
+  const vertex<T, U>* getVertexes();
 
   size_t getNumEdges() const;
 
   size_t getNumVertexes() const;
   
-  graph<T, U>& operator=(const graph<T, U> &other) const;
+  graph<T, U>& operator=(const graph<T, U> &other);
 
   vertex<T, U>* getVertexForValue(const T testValue) const;
 

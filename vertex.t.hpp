@@ -27,11 +27,18 @@ template <typename T, typename U> vertex<T, U>::~vertex(){
 
 template <typename T, typename U> size_t vertex<T, U>::addEdge(edge<T, U> *toRegister){
   size_t toReturn, newCount;
+  edge<T, U> **memCheck;
 
   toReturn = numEdges;
   newCount = numEdges + 1;
 
-  edges = (edge<T, U>**) realloc(edges, newCount * sizeof(*edges));
+  memCheck = (edge<T, U>**) realloc(edges, newCount * sizeof(*edges));
+  
+  if(NULL == memCheck){
+    exit(1);
+  }
+  edges = memCheck;
+  
   edges[numEdges] = toRegister;
   numEdges = newCount;
 
@@ -40,8 +47,10 @@ template <typename T, typename U> size_t vertex<T, U>::addEdge(edge<T, U> *toReg
 
 
 template <typename T, typename U> void vertex<T, U>::removeEdge(edge<T, U> *toRemove){
-  edge<T, U> *tmp;
+  edge<T, U> *tmp, **memCheck;
   size_t targetEdgeIndex;
+  
+  
   numEdges--;
 
   //check if this is the right or left of the edge, error if edge
@@ -71,7 +80,12 @@ template <typename T, typename U> void vertex<T, U>::removeEdge(edge<T, U> *toRe
 
   //deallocate the last edge pointer (but don't actually delete --
   //that's the network's job).
-  edges = (edge<T, U>**) realloc(edges, numEdges * sizeof(*edges));
+  memCheck = (edge<T, U>**) realloc(edges, numEdges * sizeof(*edges));
+  
+  if(NULL == memCheck){
+    exit(1);
+  }
+  edges = memCheck;
 }
 
 

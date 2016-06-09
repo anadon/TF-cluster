@@ -16,26 +16,47 @@ Input: 1 file name or input from stdin.
 
 int main(int argc, char **argv){
   graph<geneData, double> *corrData;
-  double sigma;
   struct config settings;
   int error;
   vector< graph<geneData, double>* > result;
+  struct loadFromFileReturn fileData;
 
-  error = verifyInput(argc, argv);
-  if(error) return error;
-
+  cout << "Loading configuration...";
   settings = loadConfig();
+  cout << "Loaded" << endl;
+  cout << "verifying input...";
+  error = verifyInput(argc, argv, settings.geneListFile, settings.expressionFile);
+  if(error){
+    cout << "Invalid!" << endl;
+    return error;
+  }
+  cout << "valid" << endl;
 
+  cout << "Making primary graph structure...";
   corrData = new graph<geneData, double>();
-  loadFromFile(corrData, settings.geneListFile, settings.expressionFile);
+  cout << "complete" << endl;
+  
+  cout << "Loading files and calculating matrices...";
+  fileData = loadFromFile(settings.geneListFile, settings.expressionFile);
+  cout << "calculated" << endl;
+  
+  cout << "Converting matrix entries to sigma values...";
+  convertCoeffToSigmaValue(fileData);
+  cout << "complete" << endl;
+  
+  cout << "Adding strongest edges to primary graph structure...";
+  addTopEdges(corrData, fileData);
+  cout << "complete" << endl;
+  
+  cout << "Done!" << endl;
+  delete corrData;
+  return 0;
   
   //printEdges(corrData);
 
   pruneGraph(corrData, settings.topPick);
-  sigma = calculateSigma(corrData->getEdges(), corrData->getNumEdges());
   
   //convert the raw coefficients to their equivelant sigma values
-  convertCoeffToSigmaValue(corrData, sigma);
   
 
   
