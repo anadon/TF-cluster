@@ -1,5 +1,5 @@
 CPP=g++
-CFLAGS=-ggdb -pg -O0 -pipe -Wall -Wextra -std=c++0x
+CFLAGS=-ggdb -pg -O1 -pipe -flto -Wall -Wextra -std=c++0x -march=native
 ##CFLAGS=-O3 -pipe -flto -Wall -Wextra -std=c++0x -march=native
 LIBS=-pthread
 

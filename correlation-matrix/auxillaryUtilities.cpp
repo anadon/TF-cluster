@@ -385,7 +385,7 @@ void printEdges(const struct loadFromFileReturn &fileData,
   itr = 0;
   for(size_t i = 0; i < fileData.numRows; i++)
     for(size_t j = i+1; j < fileData.numRows; j++)
-      fprintf(stdout, "%s\t%s\t%fl\n", fileData.genes[i].c_str(), 
+      fprintf(stdout, "%s\t%s\t%f\n", fileData.genes[i].c_str(), 
                   fileData.genes[j].c_str(), corrData.UDMatrix[itr++]);
   
   fflush(stdout);

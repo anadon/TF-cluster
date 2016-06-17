@@ -61,7 +61,7 @@ struct upperDiagonalMatrix{
 
 
 struct addTopEdgesHelperStruct{
-  struct upperDiagonalMatrix &protoGraph;
+  struct upperDiagonalMatrix *protoGraph;
   u8 keepTopN;
   size_t startIndex;
   size_t endIndex;

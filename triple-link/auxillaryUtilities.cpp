@@ -396,7 +396,7 @@ struct upperDiagonalMatrix sortWeights(struct upperDiagonalMatrix &protoGraph,
   
   u32 anItr = 0;
   while(anItr < numCPUs){
-    toSend[anItr].protoGraph = protoGraph;
+    toSend[anItr].protoGraph = &protoGraph;
     toSend[anItr].startIndex = (anItr * protoGraph.labels.size())/numCPUs;
     toSend[anItr].endIndex =   ((anItr+1) * protoGraph.labels.size())/numCPUs;
     toSend[anItr].keepTopN = keepTopN;
@@ -424,7 +424,7 @@ void *addTopEdgesHelper(void *protoArgs){
   
   args = (struct addTopEdgesHelperStruct*) protoArgs;
   
-  struct upperDiagonalMatrix &protoGraph = args->protoGraph;
+  struct upperDiagonalMatrix &protoGraph = *args->protoGraph;
   csize_t startIndex = args->startIndex;
   csize_t endIndex = args->endIndex;
   cu8 keepTopN = args->keepTopN;

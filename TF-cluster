@@ -1,0 +1,10 @@
+#!/bin/bash
+
+if [[ -e "correlationEdges.txt" ]]
+then
+cat correlationEdges.txt | ./triple-link-pthread
+else
+#./correlation-matrix-pthread | tee correlationEdges.txt | ./triple-link-pthread
+./correlation-matrix-pthread > correlationEdges.txt
+cat correlationEdges.txt | ./triple-link-pthread
+fi

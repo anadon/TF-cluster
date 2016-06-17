@@ -1,4 +1,5 @@
 a.out
-TF-cluster
 *.o
 correlationEdges.txt
+correlation-matrix-pthread
+triple-link-pthread

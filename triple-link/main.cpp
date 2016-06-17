@@ -27,17 +27,22 @@ int main(int argc, char **argv){
   cout << "verifying input...";
   error = verifyInput(argc, argv, settings.geneListFile);
   if(error){
-    cout << "Invalid!" << endl;
+    cout << "invalid!" << endl;
     return error;
   }
   cout << "valid" << endl;
 
   cout << "Making primary graph structure..."; fflush(stdout);
   corrData = new graph<geneData, f64>();
-  cout << "complete" << endl;
-
+  cout << "complete!" << endl;
+  
+  cout << "Loading correlation matrix..."; fflush(stdout);
   protoGraph = loadMatrix(settings.tripleLink3);
+  cout << "done!" << endl;
+  
+  cout << "Sorting and selecting edges..."; fflush(stdout);
   protoGraph = sortWeights(protoGraph, settings.keepTopN);
+  cout << "finished!" << endl;
 
   
   //result = tripleLink(corrData, settings.tripleLink1, 
