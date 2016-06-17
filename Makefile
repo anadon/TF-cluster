@@ -1,28 +1,17 @@
-CPP=g++
-##CFLAGS=-g -O0 -pthread -pipe -flto -Wall -Wextra -std=c++0x
-CFLAGS=-O3 -pthread -pipe -flto -Wall -Wextra -std=c++0x
-##LIBS=
+EXEC=correlation-matrix-pthread triple-link-pthread
 
-EXEC=TF-cluster
+all:$(EXEC)
 
-SOURCES=main.cpp auxillaryUtilities.cpp tripleLink.cpp geneData.cpp
-OBJECTS=main.o   auxillaryUtilities.o   tripleLink.o   geneData.o
+correlation-matrix-pthread:
+	cd correlation-matrix ; make
+	cp correlation-matrix/correlation-matrix-pthread .
 
-all:$(OBJECTS)
-	$(CPP) $(CFLAGS) $(LIBS) $(OBJECTS) -o $(EXEC)
+triple-link-pthread:
+	cd triple-link ; make
+	cp triple-link/triple-link-pthread .
 
-main.o:main.cpp graph.hpp auxillaryUtilities.hpp
-	$(CPP) $(CFLAGS) -c main.cpp
-
-auxillaryUtilities.o:auxillaryUtilities.cpp auxillaryUtilities.hpp graph.t.hpp
-	$(CPP) $(CFLAGS) -c auxillaryUtilities.cpp
-
-tripleLink.o:tripleLink.cpp tripleLink.hpp graph.hpp
-	$(CPP) $(CFLAGS) -c tripleLink.cpp
-
-geneData.o:geneData.cpp geneData.hpp
-	$(CPP) $(CFLAGS) -c geneData.cpp
 
 clean:
-	rm -f $(OBJECTS)
+	cd correlation-matrix ; make clean
+	cd triple-link ; make clean
 	rm -f $(EXEC)
