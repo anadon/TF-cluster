@@ -1,6 +1,6 @@
 CPP=g++
 ##CFLAGS=-ggdb -pg -O0 -pipe -Wall -std=c++0x
-CFLAGS=-O3 -pipe -flto -Wall -Wextra -std=c++0x -march=native
+CFLAGS=-O3 -pipe -Wall -std=c++0x -march=native
 LIBS=-pthread
 
 EXEC=correlation-matrix-pthread
@@ -12,7 +12,7 @@ HEADERS=         auxillaryUtilities.hpp statistics.hpp
 all:$(EXEC)
 
 $(EXEC):$(OBJECTS)
-	$(CPP) $(CFLAGS) $(LIBS) $(OBJECTS) -o $(EXEC)
+	$(CPP) $(CFLAGS) -flto $(LIBS) $(OBJECTS) -o $(EXEC)
 
 ##%.o:%.c $(HEADERS)
 ##	$(CPP) $(CFLAGS) -c  $< -o $@

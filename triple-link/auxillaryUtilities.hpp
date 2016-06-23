@@ -54,9 +54,10 @@ struct loadFromFileReturn{
 
 
 struct upperDiagonalMatrix{
-  vector<string> labels;
-  unordered_map<string, size_t> labelLookup;
-  vector< vector< pair<string, f64> > > matrix;
+  vector<string> labels;//column size is the size of this -1
+  unordered_map<std::string, size_t> labelLookup;
+  vector< pair<size_t, f64>* > matrix;
+  vector<size_t> colSize;
 };
 
 

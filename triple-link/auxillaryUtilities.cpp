@@ -1,7 +1,7 @@
 #include <fstream>
 #include <iostream>
 #include <cstring>
-#include <math.h>
+#include <cmath>
 #include <queue>
 #include <string>
 #include <thread>
@@ -24,6 +24,7 @@ using std::queue;
 using std::string;
 using std::thread;
 using std::vector;
+using std::make_pair;
 
 
 vector<string> tokenizeString(const string toTokenize, const char *delimitors){
@@ -182,9 +183,6 @@ void mergeHelper(edge<geneData, f64> **toSort, csize_t leftIndex,
   
   free(sortSpace);
 }
-
-
-
 
 
 void removeLowEdges(graph<geneData, f64> *geneNetwork, 
@@ -385,10 +383,10 @@ struct upperDiagonalMatrix sortWeights(struct upperDiagonalMatrix &protoGraph,
   pthread_t *workers;
   struct addTopEdgesHelperStruct *toSend;
   
-  cu32 numCPUs = thread::hardware_concurrency() < protoGraph.labels.size() ? 
-                            thread::hardware_concurrency() : protoGraph.labels.size();
+  //cu32 numCPUs = thread::hardware_concurrency() < protoGraph.labels.size() ? 
+  //                          thread::hardware_concurrency() : protoGraph.labels.size();
   
-  //cu32 numCPUs = 1;
+  cu32 numCPUs = 1;
                             
   toSend = (struct addTopEdgesHelperStruct*) malloc(sizeof(*toSend) * numCPUs);
   
@@ -403,50 +401,50 @@ struct upperDiagonalMatrix sortWeights(struct upperDiagonalMatrix &protoGraph,
     cout << "Dispatching worker " << anItr << " to prune entries " 
          << toSend[anItr].startIndex << " to " << toSend[anItr].endIndex 
          << endl;
-    pthread_create(&workers[anItr], NULL, addTopEdgesHelper, &toSend[anItr]);
-    //addTopEdgesHelper(&toSend[anItr]);
+    //pthread_create(&workers[anItr], NULL, addTopEdgesHelper, &toSend[anItr]);
+    addTopEdgesHelper(&toSend[anItr]);
     anItr++;
   }
   
-  void *toIgnore;
-  for(anItr = 0; anItr < numCPUs; anItr++)
-    pthread_join(workers[anItr], &toIgnore);
+  //void *toIgnore;
+  //for(anItr = 0; anItr < numCPUs; anItr++)
+  //  pthread_join(workers[anItr], &toIgnore);
   
   free(toSend);
   free(workers);
   
+  return protoGraph;
 }
 
 
 void *addTopEdgesHelper(void *protoArgs){
   struct addTopEdgesHelperStruct *args;
-  pair<string, f64> *workSpace, *sortSpace;
+  pair<size_t, f64> *workSpace, *sortSpace;
   
   args = (struct addTopEdgesHelperStruct*) protoArgs;
   
-  struct upperDiagonalMatrix &protoGraph = *args->protoGraph;
+  struct upperDiagonalMatrix *protoGraph = args->protoGraph;
   csize_t startIndex = args->startIndex;
   csize_t endIndex = args->endIndex;
   cu8 keepTopN = args->keepTopN;
-  csize_t size = protoGraph.labels.size();
   
-  workSpace = (pair<string, f64>*) malloc(sizeof(*workSpace) * size);
-  sortSpace = (pair<string, f64>*) malloc(sizeof(*workSpace) * size);
+  sortSpace = (pair<size_t, f64>*) malloc(sizeof(*sortSpace) * protoGraph->labels.size());
   
   for(size_t i = startIndex; i < endIndex; i++){
     size_t count[2] = {0, 0};
-    pair<string, f64> swap;
+    pair<size_t, f64> swap;
     queue<size_t> indiciesOfInterest;
     queue<size_t> IOISwap;
+    size_t size;
     
-    printf("%lu copy data\n", i);  fflush(stdout);
+    size = protoGraph->colSize[i];
+    //printf("%lu copy data of size %lu\n", i, size);  fflush(stdout);
     
     //copy
-    for(size_t j = 0; j < size; j++)
-      workSpace[j] = protoGraph.matrix[i][j];
-    protoGraph.matrix[i].clear();
+    //TODO -- make this so that memcpy can be used
+    workSpace = protoGraph->matrix[i];
     
-    printf("%lu presort\n", i);  fflush(stdout);
+    //printf("%lu presort\n", i);  fflush(stdout);
     
     //sort
     //Quickmerge
@@ -468,16 +466,48 @@ void *addTopEdgesHelper(void *protoArgs){
         indiciesOfInterest.push(j);
     indiciesOfInterest.push(size);
     
-    printf("%lu sort\n", i);  fflush(stdout);
+
+    
+    //printf("%lu sort\n", i);  fflush(stdout);
     while(indiciesOfInterest.size() > 2){
+      /*queue<size_t> DEBUG;
       while(indiciesOfInterest.size() > 1){
-        size_t leftStart, leftPtr, leftEnd, rightPtr, rightEnd, itr;
+        size_t tmp = indiciesOfInterest.front();
+        indiciesOfInterest.pop();
+        if(tmp >= indiciesOfInterest.front()){
+          printf("\non entry %lu, %lu >= %lu", i, tmp, indiciesOfInterest.front());
+        }else{
+          //printf("%lu < %lu\n", tmp, indiciesOfInterest.front());
+          //printf(".");
+          DEBUG.push(tmp);
+        }
+      }
+      DEBUG.push(size);
+      indiciesOfInterest = DEBUG;*/
+      
+      printf("\noutter\n");
+      while(indiciesOfInterest.size() > 2){
+        size_t leftPtr, rightPtr, itr;
+        csize_t leftStart = indiciesOfInterest.front(); indiciesOfInterest.pop();
+        csize_t leftEnd = indiciesOfInterest.front();  indiciesOfInterest.pop();
+        csize_t rightEnd = indiciesOfInterest.front();
         itr = 0;
-        leftStart = leftPtr = indiciesOfInterest.front(); indiciesOfInterest.pop();
-        leftEnd = rightPtr = indiciesOfInterest.front();  indiciesOfInterest.pop();
-        rightEnd = indiciesOfInterest.front();
+        leftPtr = leftStart;
+        rightPtr = leftEnd;
         csize_t copySize = (rightEnd - leftStart) * sizeof(*sortSpace);
         IOISwap.push(leftStart);
+        printf("\t%lu", leftStart);
+        
+        bool shouldExit = false;
+        if(leftPtr >= leftEnd){
+          printf("ERROR: indexes shuffled!  leftPtr (%lu) >= leftEnd (%lu)\n", leftPtr, leftEnd);
+          shouldExit = true;
+        }
+        if(rightPtr >= rightEnd){ 
+          printf("ERROR: indexes shuffled!  rightPtr (%lu) >= rightEnd (%lu)\n", rightPtr, rightEnd);
+          shouldExit = true;
+        }
+        if(shouldExit) free(NULL);
         
         while(leftPtr < leftEnd && rightPtr < rightEnd){
           if(workSpace[leftPtr].second > workSpace[rightPtr].second)
@@ -490,17 +520,24 @@ void *addTopEdgesHelper(void *protoArgs){
         
         memcpy(&workSpace[leftStart], sortSpace, copySize);
       }
+      if(indiciesOfInterest.size() == 2){
+        IOISwap.push(indiciesOfInterest.front());
+        printf("\t%lu", indiciesOfInterest.front());
+        indiciesOfInterest.pop();
+      }
+      IOISwap.push(size);
+      printf("\t%lu", size);
+      
       indiciesOfInterest = IOISwap;
-      indiciesOfInterest.push(size);
+      while(!IOISwap.empty()) IOISwap.pop();
     }
     
-    for(u8 j = 0; j < keepTopN; j++){
-      protoGraph.matrix[i].push_back(workSpace[j]);
-    }
+    void *tmpPtr =  realloc(protoGraph->matrix[i], keepTopN * sizeof(*protoGraph->matrix[i]));
+    if(tmpPtr != protoGraph->matrix[i]) free(protoGraph->matrix[i]);
+    protoGraph->matrix[i] = (pair<size_t, f64>*) tmpPtr;
     
   }
   
-  free(workSpace);
   free(sortSpace);
   
   return NULL;
@@ -512,30 +549,74 @@ struct upperDiagonalMatrix loadMatrix(cf64 &minValue){
   char left[128], right[128];
   string leftS, rightS;
   f64 weight;
+  vector<size_t> columnSize;
+  size_t leftIndex, rightIndex, numEntries;
+  void *tmpPtr;
+  
+  numEntries = 0;
   
   while(!feof(stdin) && !ferror(stdin)){
+    
     scanf("%127s %127s %lf", left, right, &weight);
-    weight = abs(weight);//I think we care about absolute correlation
+    weight = std::abs(weight);//I think we care about absolute correlation
     if(weight < minValue) continue;
     
     leftS = string(left);
     rightS = string(right);
     
     if(tr.labelLookup.end() == tr.labelLookup.find(leftS)){
-      vector< pair<string, f64> > throwAway;
-      tr.labelLookup.insert({leftS, tr.labels.size()});
+      leftIndex = tr.labels.size();
+      tr.labelLookup.emplace(std::make_pair(leftS, leftIndex));
       tr.labels.push_back(leftS);
-      tr.matrix.push_back(throwAway);
+      numEntries++;
+      
+      leftIndex = tr.labels.size()-1;
+      tr.matrix.push_back( (pair<size_t, f64>*) NULL);
+      
+      columnSize.push_back(0);
+      tr.colSize.push_back(0);
+    }else{
+      leftIndex = tr.labelLookup[leftS];
     }
-    tr.matrix[tr.labelLookup[leftS]].push_back({leftS, weight});
     
     if(tr.labelLookup.end() == tr.labelLookup.find(rightS)){
-      vector< pair<string, f64> > throwAway;
-      tr.labelLookup.insert({rightS, tr.labels.size()});
+      rightIndex = tr.labels.size();
+      tr.labelLookup.emplace(std::make_pair(rightS, rightIndex));
       tr.labels.push_back(rightS);
-      tr.matrix.push_back(throwAway);
+      numEntries++;
+      
+      rightIndex = tr.labels.size() -1;
+      tr.matrix.push_back( (pair<size_t, f64>*) NULL );
+      
+      columnSize.push_back(0);
+      tr.colSize.push_back(0);
+    }else{
+      rightIndex = tr.labelLookup[rightS];
     }
-    tr.matrix[tr.labelLookup[rightS]].push_back({rightS, weight});
+    
+    
+    
+    if(columnSize[leftIndex] <= tr.colSize[leftIndex]){
+      columnSize[leftIndex] = (tr.colSize[leftIndex]+1)*2;
+      tmpPtr = realloc(tr.matrix[leftIndex], sizeof(pair<size_t, f64>) * columnSize[leftIndex] );
+      if(NULL == tmpPtr) exit(-ENOMEM);
+      tr.matrix[leftIndex] = (pair<size_t, f64>*) tmpPtr;
+    }
+    tr.matrix[leftIndex][tr.colSize[leftIndex]] = make_pair(rightIndex, weight);
+    tr.colSize[leftIndex]++;
+    
+    if(columnSize[rightIndex] <= tr.colSize[rightIndex]){
+      columnSize[rightIndex] = (tr.colSize[rightIndex]+1)*2;
+      tmpPtr = realloc(tr.matrix[rightIndex], sizeof(pair<size_t, f64>) * columnSize[rightIndex]);
+      if(NULL == tmpPtr) exit(-ENOMEM);
+      tr.matrix[rightIndex] = (pair<size_t, f64>*) tmpPtr;
+    }
+    tr.matrix[rightIndex][tr.colSize[rightIndex]] = make_pair(leftIndex, weight);
+    tr.colSize[rightIndex]++;
+  }
+  
+  for(size_t i = 0; i < tr.colSize.size(); i++){
+    tr.matrix[rightIndex] = (pair<size_t, f64>*) realloc(tr.matrix[i], tr.colSize[i] * sizeof(pair<size_t, f64>));
   }
   
   return tr;

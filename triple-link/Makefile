@@ -1,5 +1,5 @@
 CPP=g++
-CFLAGS=-ggdb -pg -O1 -pipe -flto -Wall -Wextra -std=c++0x -march=native
+CFLAGS=-ggdb -pg -O0 -pipe -Wall -Wextra -std=c++0x -march=native
 ##CFLAGS=-O3 -pipe -flto -Wall -Wextra -std=c++0x -march=native
 LIBS=-pthread
 
@@ -14,7 +14,7 @@ TEMPLATES=edge.t.hpp graph.t.hpp vertex.t.hpp
 all:$(EXEC)
 
 $(EXEC):$(OBJECTS)
-	$(CPP) $(CFLAGS) $(LIBS) $(OBJECTS) -o $(EXEC)
+	$(CPP) $(CFLAGS) -flto $(LIBS) $(OBJECTS) -o $(EXEC)
 
 %.o:%.cpp $(HEADERS) $(TEMPLATES)
 	$(CPP) $(CFLAGS) -c $<
