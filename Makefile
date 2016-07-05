@@ -26,7 +26,8 @@ $(CMTX_INCLUDE):$(CMTX)
 	cp correlation-matrix/correlation-matrix.hpp .
 
 $(CMTX):
-	cd correlation-matrix ; git pull
+	git submodule update correlation-matrix
+	#cd correlation-matrix ; git pull
 	cd correlation-matrix ; make
 	mv correlation-matrix/correlation-matrix.a .
 
