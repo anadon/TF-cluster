@@ -1,3 +1,3 @@
-[submodule "correlation-matrix-lib"]
-	path = correlation-matrix-lib
+[submodule "correlation-matrix"]
+	path = correlation-matrix
 	url = https://github.com/anadon/correlation-matrix
