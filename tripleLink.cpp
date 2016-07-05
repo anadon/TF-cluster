@@ -128,10 +128,6 @@ vector< graph<geneData, double>* > tripleLink(graph<geneData, double> *geneNetwo
   //maximum edge must also have a sigma value >= 3.
   
   
-  //remove edges that won't be used for triple link --> with sigma 
-  //values < 1
-  removeLowEdges(geneNetwork, tripleLink3);
-  
   //remove verticies which lack the connection strength to ever be 
   //included in the triple link algorithm
   removeWeakVerticies(geneNetwork, tripleLink1, tripleLink2, tripleLink3);
@@ -154,9 +150,6 @@ vector< graph<geneData, double>* > tripleLink(graph<geneData, double> *geneNetwo
     toReturn.push_back(tripleLinkIteration(geneNetwork, targetEdgeIndex, 
                                 tripleLink1, tripleLink2, tripleLink3));
     
-    //remove edges that won't be used for triple link --> with sigma 
-    //values < 1
-    removeLowEdges(geneNetwork, tripleLink3);
   
     //remove verticies which lack the connection strength to ever be 
     //included in the triple link algorithm
