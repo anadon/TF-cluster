@@ -1,0 +1,45 @@
+/***********************************************************************
+
+***********************************************************************/
+#ifndef GNODE_HPP
+#define GNODE_HPP
+
+#include <unistd.h>
+#include <string>
+
+
+template <typename T, typename U> class graph;
+
+template <typename T, typename U> class edge;
+
+
+template <typename T, typename U> class vertex{
+  private:
+  edge<T, U> **edges;
+  size_t numEdges;
+  
+  public:
+  size_t vertexIndex;
+  T value;
+  
+  vertex(size_t index, T data);
+
+  ~vertex();
+
+  size_t addEdge(edge<T, U> *toRegister);
+  
+  edge<T, U>** getEdges();
+  
+  size_t getNumEdges() const;
+
+  void removeEdge(edge<T, U> *toRemove);
+  
+  void updateIndex(size_t newIndex);
+  
+  void clear();
+  
+  bool operator==(const vertex<T, U> &other) const;
+  
+};
+
+#endif

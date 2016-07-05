@@ -1,17 +1,24 @@
-EXEC=correlation-matrix-pthread triple-link-pthread
+CPP=g++
+CFLAGS=-ggdb -pg -O0 -pipe -Wall -Wextra -std=c++11 -march=native
+##CFLAGS=-O3 -pipe -Wall -Wextra -std=c++0x -march=native
+LIBS=-pthread correlation-matrix.a
+
+EXEC=triple-link-pthread
+
+SOURCES=main.cpp auxillaryUtilities.cpp tripleLink.cpp geneData.cpp
+OBJECTS=main.o   auxillaryUtilities.o   tripleLink.o   geneData.o
+HEADERS=auxillaryUtilities.hpp edge.hpp geneData.hpp graph.hpp \
+        tripleLink.hpp vertex.hpp correlation-matrix.hpp
+TEMPLATES=edge.t.hpp graph.t.hpp vertex.t.hpp
 
 all:$(EXEC)
 
-correlation-matrix-pthread:
-	cd correlation-matrix ; make
-	cp correlation-matrix/correlation-matrix-pthread .
+$(EXEC):$(OBJECTS)
+	$(CPP) $(CFLAGS) -flto $(OBJECTS) $(LIBS) -o $(EXEC)
 
-triple-link-pthread:
-	cd triple-link ; make
-	cp triple-link/triple-link-pthread .
-
+%.o:%.cpp $(HEADERS) $(TEMPLATES)
+	$(CPP) $(CFLAGS) -c $<
 
 clean:
-	cd correlation-matrix ; make clean
-	cd triple-link ; make clean
+	rm -f $(OBJECTS)
 	rm -f $(EXEC)

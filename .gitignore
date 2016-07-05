@@ -3,3 +3,4 @@ a.out
 correlationEdges.txt
 correlation-matrix-pthread
 triple-link-pthread
+correlation-matrix.*
