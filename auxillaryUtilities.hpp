@@ -45,6 +45,17 @@ struct loadFromFileReturn{
 };
 
 
+<<<<<<< HEAD:auxillaryUtilities.hpp
+=======
+struct upperDiagonalMatrix{
+  vector<string> labels;//column size is the size of this -1
+  unordered_map<std::string, size_t> labelLookup;
+  vector< pair<size_t, f64>* > matrix;
+  vector<size_t> colSize;
+};
+
+
+>>>>>>> 07ed926135aaedde6cc004605ac07d14f65c2b10:triple-link/auxillaryUtilities.hpp
 struct addTopEdgesHelperStruct{
   struct correlationMatrix *protoGraph;
   u8 keepTopN;

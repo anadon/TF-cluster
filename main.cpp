@@ -54,6 +54,10 @@ int main(int argc, char **argv){
   cout << "Loading correlation matrix..."; fflush(stdout);
   protoGraph = generateFullMatrixFromFile(settings.expressionFile, settings.tripleLink3);
   cout << "done!" << endl;
+
+  cout << "Making primary graph structure..."; fflush(stdout);
+  corrData = new graph<geneData, f64>();
+  cout << "complete!" << endl;
   
   cout << "Sorting and selecting edges..."; fflush(stdout);
   protoGraph = sortWeights(protoGraph, settings.keepTopN);

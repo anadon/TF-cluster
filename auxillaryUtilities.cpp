@@ -25,6 +25,26 @@ using std::string;
 using std::thread;
 using std::vector;
 using std::make_pair;
+<<<<<<< HEAD:auxillaryUtilities.cpp
+=======
+
+
+vector<string> tokenizeString(const string toTokenize, const char *delimitors){
+  vector<string> tr;
+  size_t begin, end;
+  
+  begin = 0;
+  
+  do{
+    end = toTokenize.find_first_of(delimitors, begin);
+    string pToken = toTokenize.substr(begin, end - begin);
+    if(string("") != pToken)  tr.push_back(pToken);
+    begin = end+1;
+  }while(end+1);
+
+  return tr;
+}
+>>>>>>> 07ed926135aaedde6cc004605ac07d14f65c2b10:triple-link/auxillaryUtilities.cpp
 
 
 int verifyInput(int argc, char **argv, const string geneListFile){
@@ -170,12 +190,20 @@ void mergeHelper(edge<geneData, f64> **toSort, csize_t leftIndex,
 }
 
 
+<<<<<<< HEAD:auxillaryUtilities.cpp
 void removeLowEdges(graph<geneData, f64> *geneNetwork, cf64 &cutOff){
   for(size_t i = 0; i < geneNetwork->getNumEdges(); i++){
     edge<geneData, f64> *target = geneNetwork->getEdges()[i];
     if(target->weight < cutOff)
       geneNetwork->removeEdge(target);
   }
+=======
+void removeLowEdges(graph<geneData, f64> *geneNetwork, 
+                                                  cf64&cutOff){
+  for(size_t i = 0; i < geneNetwork->numEdges; i++)
+    if(geneNetwork->edgeArray[i].weight < cutOff)
+      geneNetwork->removeEdge(&geneNetwork->edgeArray[i]);
+>>>>>>> 07ed926135aaedde6cc004605ac07d14f65c2b10:triple-link/auxillaryUtilities.cpp
 }
 
 
@@ -370,10 +398,10 @@ struct correlationMatrix sortWeights(struct correlationMatrix &protoGraph,
   pthread_t *workers;
   struct addTopEdgesHelperStruct *toSend;
   
-  cu32 numCPUs = thread::hardware_concurrency() < protoGraph.labels.size() ? 
-                            thread::hardware_concurrency() : protoGraph.labels.size();
+  //cu32 numCPUs = thread::hardware_concurrency() < protoGraph.labels.size() ? 
+  //                          thread::hardware_concurrency() : protoGraph.labels.size();
   
-  //cu32 numCPUs = 1;
+  cu32 numCPUs = 1;
                             
   toSend = (struct addTopEdgesHelperStruct*) malloc(sizeof(*toSend) * numCPUs);
   
@@ -385,17 +413,25 @@ struct correlationMatrix sortWeights(struct correlationMatrix &protoGraph,
     toSend[anItr].startIndex = (anItr * protoGraph.labels.size())/numCPUs;
     toSend[anItr].endIndex =   ((anItr+1) * protoGraph.labels.size())/numCPUs;
     toSend[anItr].keepTopN = keepTopN;
+<<<<<<< HEAD:auxillaryUtilities.cpp
     //cout << "Dispatching worker " << anItr << " to prune entries " 
     //     << toSend[anItr].startIndex << " to " << toSend[anItr].endIndex 
     //     << endl;
     pthread_create(&workers[anItr], NULL, addTopEdgesHelper, &toSend[anItr]);
     //addTopEdgesHelper(&toSend[anItr]);
+=======
+    cout << "Dispatching worker " << anItr << " to prune entries " 
+         << toSend[anItr].startIndex << " to " << toSend[anItr].endIndex 
+         << endl;
+    //pthread_create(&workers[anItr], NULL, addTopEdgesHelper, &toSend[anItr]);
+    addTopEdgesHelper(&toSend[anItr]);
+>>>>>>> 07ed926135aaedde6cc004605ac07d14f65c2b10:triple-link/auxillaryUtilities.cpp
     anItr++;
   }
   
-  void *toIgnore;
-  for(anItr = 0; anItr < numCPUs; anItr++)
-    pthread_join(workers[anItr], &toIgnore);
+  //void *toIgnore;
+  //for(anItr = 0; anItr < numCPUs; anItr++)
+  //  pthread_join(workers[anItr], &toIgnore);
   
   free(toSend);
   free(workers);
@@ -410,7 +446,11 @@ void *addTopEdgesHelper(void *protoArgs){
   
   args = (struct addTopEdgesHelperStruct*) protoArgs;
   
+<<<<<<< HEAD:auxillaryUtilities.cpp
   struct correlationMatrix *protoGraph = args->protoGraph;
+=======
+  struct upperDiagonalMatrix *protoGraph = args->protoGraph;
+>>>>>>> 07ed926135aaedde6cc004605ac07d14f65c2b10:triple-link/auxillaryUtilities.cpp
   csize_t startIndex = args->startIndex;
   csize_t endIndex = args->endIndex;
   cu8 keepTopN = args->keepTopN;
@@ -430,9 +470,12 @@ void *addTopEdgesHelper(void *protoArgs){
     //copy
     //TODO -- make this so that memcpy can be used
     workSpace = protoGraph->matrix[i];
+<<<<<<< HEAD:auxillaryUtilities.cpp
     if(NULL == workSpace){
       continue;
     }
+=======
+>>>>>>> 07ed926135aaedde6cc004605ac07d14f65c2b10:triple-link/auxillaryUtilities.cpp
     
     //printf("%lu presort\n", i);  fflush(stdout);
     
@@ -460,7 +503,26 @@ void *addTopEdgesHelper(void *protoArgs){
     
     //printf("%lu sort\n", i);  fflush(stdout);
     while(indiciesOfInterest.size() > 2){
+<<<<<<< HEAD:auxillaryUtilities.cpp
       
+=======
+      /*queue<size_t> DEBUG;
+      while(indiciesOfInterest.size() > 1){
+        size_t tmp = indiciesOfInterest.front();
+        indiciesOfInterest.pop();
+        if(tmp >= indiciesOfInterest.front()){
+          printf("\non entry %lu, %lu >= %lu", i, tmp, indiciesOfInterest.front());
+        }else{
+          //printf("%lu < %lu\n", tmp, indiciesOfInterest.front());
+          //printf(".");
+          DEBUG.push(tmp);
+        }
+      }
+      DEBUG.push(size);
+      indiciesOfInterest = DEBUG;*/
+      
+      printf("\noutter\n");
+>>>>>>> 07ed926135aaedde6cc004605ac07d14f65c2b10:triple-link/auxillaryUtilities.cpp
       while(indiciesOfInterest.size() > 2){
         size_t leftPtr, rightPtr, itr;
         csize_t leftStart = indiciesOfInterest.front(); indiciesOfInterest.pop();
@@ -471,7 +533,11 @@ void *addTopEdgesHelper(void *protoArgs){
         rightPtr = leftEnd;
         csize_t copySize = (rightEnd - leftStart) * sizeof(*sortSpace);
         IOISwap.push(leftStart);
+<<<<<<< HEAD:auxillaryUtilities.cpp
         //printf("\t%lu", leftStart);
+=======
+        printf("\t%lu", leftStart);
+>>>>>>> 07ed926135aaedde6cc004605ac07d14f65c2b10:triple-link/auxillaryUtilities.cpp
         
         bool shouldExit = false;
         if(leftPtr >= leftEnd){
@@ -497,17 +563,29 @@ void *addTopEdgesHelper(void *protoArgs){
       }
       if(indiciesOfInterest.size() == 2){
         IOISwap.push(indiciesOfInterest.front());
+<<<<<<< HEAD:auxillaryUtilities.cpp
       //  printf("\t%lu", indiciesOfInterest.front());
         indiciesOfInterest.pop();
       }
       IOISwap.push(size);
       //printf("\t%lu", size);
+=======
+        printf("\t%lu", indiciesOfInterest.front());
+        indiciesOfInterest.pop();
+      }
+      IOISwap.push(size);
+      printf("\t%lu", size);
+>>>>>>> 07ed926135aaedde6cc004605ac07d14f65c2b10:triple-link/auxillaryUtilities.cpp
       
       indiciesOfInterest = IOISwap;
       while(!IOISwap.empty()) IOISwap.pop();
     }
     
     void *tmpPtr =  realloc(protoGraph->matrix[i], keepTopN * sizeof(*protoGraph->matrix[i]));
+<<<<<<< HEAD:auxillaryUtilities.cpp
+=======
+    if(tmpPtr != protoGraph->matrix[i]) free(protoGraph->matrix[i]);
+>>>>>>> 07ed926135aaedde6cc004605ac07d14f65c2b10:triple-link/auxillaryUtilities.cpp
     protoGraph->matrix[i] = (pair<size_t, f64>*) tmpPtr;
     
   }
@@ -518,6 +596,7 @@ void *addTopEdgesHelper(void *protoArgs){
 }
 
 
+<<<<<<< HEAD:auxillaryUtilities.cpp
 graph<geneData, f64>* constructGraph(const struct correlationMatrix &protoGraph){
   graph<geneData, f64>* tr;
   size_t edgeCount;
@@ -540,6 +619,81 @@ graph<geneData, f64>* constructGraph(const struct correlationMatrix &protoGraph)
       tmpR.construct().setName(protoGraph.labels[j]);
       tr->addEdge(leftVert , tr->addVertex(tmpR), protoGraph.matrix[i][j].second);
     }
+=======
+struct upperDiagonalMatrix loadMatrix(cf64 &minValue){
+  struct upperDiagonalMatrix tr;
+  char left[128], right[128];
+  string leftS, rightS;
+  f64 weight;
+  vector<size_t> columnSize;
+  size_t leftIndex, rightIndex, numEntries;
+  void *tmpPtr;
+  
+  numEntries = 0;
+  
+  while(!feof(stdin) && !ferror(stdin)){
+    
+    scanf("%127s %127s %lf", left, right, &weight);
+    weight = std::abs(weight);//I think we care about absolute correlation
+    if(weight < minValue) continue;
+    
+    leftS = string(left);
+    rightS = string(right);
+    
+    if(tr.labelLookup.end() == tr.labelLookup.find(leftS)){
+      leftIndex = tr.labels.size();
+      tr.labelLookup.emplace(std::make_pair(leftS, leftIndex));
+      tr.labels.push_back(leftS);
+      numEntries++;
+      
+      leftIndex = tr.labels.size()-1;
+      tr.matrix.push_back( (pair<size_t, f64>*) NULL);
+      
+      columnSize.push_back(0);
+      tr.colSize.push_back(0);
+    }else{
+      leftIndex = tr.labelLookup[leftS];
+    }
+    
+    if(tr.labelLookup.end() == tr.labelLookup.find(rightS)){
+      rightIndex = tr.labels.size();
+      tr.labelLookup.emplace(std::make_pair(rightS, rightIndex));
+      tr.labels.push_back(rightS);
+      numEntries++;
+      
+      rightIndex = tr.labels.size() -1;
+      tr.matrix.push_back( (pair<size_t, f64>*) NULL );
+      
+      columnSize.push_back(0);
+      tr.colSize.push_back(0);
+    }else{
+      rightIndex = tr.labelLookup[rightS];
+    }
+    
+    
+    
+    if(columnSize[leftIndex] <= tr.colSize[leftIndex]){
+      columnSize[leftIndex] = (tr.colSize[leftIndex]+1)*2;
+      tmpPtr = realloc(tr.matrix[leftIndex], sizeof(pair<size_t, f64>) * columnSize[leftIndex] );
+      if(NULL == tmpPtr) exit(-ENOMEM);
+      tr.matrix[leftIndex] = (pair<size_t, f64>*) tmpPtr;
+    }
+    tr.matrix[leftIndex][tr.colSize[leftIndex]] = make_pair(rightIndex, weight);
+    tr.colSize[leftIndex]++;
+    
+    if(columnSize[rightIndex] <= tr.colSize[rightIndex]){
+      columnSize[rightIndex] = (tr.colSize[rightIndex]+1)*2;
+      tmpPtr = realloc(tr.matrix[rightIndex], sizeof(pair<size_t, f64>) * columnSize[rightIndex]);
+      if(NULL == tmpPtr) exit(-ENOMEM);
+      tr.matrix[rightIndex] = (pair<size_t, f64>*) tmpPtr;
+    }
+    tr.matrix[rightIndex][tr.colSize[rightIndex]] = make_pair(leftIndex, weight);
+    tr.colSize[rightIndex]++;
+  }
+  
+  for(size_t i = 0; i < tr.colSize.size(); i++){
+    tr.matrix[rightIndex] = (pair<size_t, f64>*) realloc(tr.matrix[i], tr.colSize[i] * sizeof(pair<size_t, f64>));
+>>>>>>> 07ed926135aaedde6cc004605ac07d14f65c2b10:triple-link/auxillaryUtilities.cpp
   }
   
   return tr;
