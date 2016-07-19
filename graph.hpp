@@ -42,6 +42,8 @@ template <typename T, typename U> class graph{
 
   edge<T, U>** getEdges();
 
+  const edge<T, U>** getEdges() const;
+
   size_t getNumEdges() const;
   
   void hintNumEdges(const size_t suggestSize);
@@ -59,7 +61,7 @@ template <typename T, typename U> class graph{
 
   vertex<T, U>* addVertex(vertex<T, U> *newVertex);
 
-  vertex<T, U>* getVertexForValue(T testValue);
+  vertex<T, U>* getVertexForValue(const T &testValue);
   
   vertex<T, U>** getVertexes();
 
@@ -67,9 +69,9 @@ template <typename T, typename U> class graph{
   
   void hintNumVertexes(const size_t suggestSize);
 
-  T removeVertex(vertex<T, U> *toRemove);
+  T removeVertex(const vertex<T, U> *toRemove);
   
-  T removeVertex(T value);
+  //T removeVertex(T value);
   
   void shrinkVertexCapacityToFit();
   

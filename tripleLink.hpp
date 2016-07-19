@@ -8,12 +8,11 @@
 
 using std::vector;
 
-graph<geneData, double>* tripleLinkIteration(graph<geneData, double> *geneNetwork,
-                    const double tripleLink1, const double tripleLink2, 
-                const double tripleLink3, const size_t targetEdgeIndex);
+queue<size_t> tripleLinkIteration(graph<geneData, double> *geneNetwork,
+                    cf64 tripleLink1, cf64 tripleLink2, 
+                                          const size_t targetEdgeIndex);
 
-vector< graph<geneData, double>* > tripleLink(graph<geneData, double> *geneNetwork,
-                    const double tripleLink1, const double tripleLink2, 
-                                              const double tripleLink3);
+queue< queue<size_t> > tripleLink(graph<geneData, double> *geneNetwork,
+                    cf64 tripleLink1, cf64 tripleLink2);
 
 #endif

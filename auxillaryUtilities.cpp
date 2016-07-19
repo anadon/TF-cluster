@@ -14,6 +14,7 @@
 #include "vertex.t.hpp"
 
 
+using std::cerr;
 using std::cout;
 using std::endl;
 using std::ifstream;
@@ -82,23 +83,6 @@ struct loadFromFileReturn loadFromFile(string geneListFile){
   
   return tr;
 }
-
-
-
-/*
-void pruneGraph(graph<geneData, f64> *geneNetwork, u8 keepTopN){
-
-  for(size_t i = 0; i < geneNetwork->getNumVertexes(); i++){
-    quickMergeEdges(&geneNetwork->getVertexes()[i], geneNetwork->getVertexes()[i]->getNumEdges());
-  }
-
-  for(size_t i = 0; i < geneNetwork->getNumVertexes(); i++){
-    vertex<geneData, double> *target = geneNetwork->getVertexes()[i];
-    for(size_t j = target->getNumEdges()-1; j >= keepTopN; j--)
-      geneNetwork->removeEdge(target->getEdges()[j]);
-  }
-}
-*/
 
 
 void quickMergeEdges(vertex<geneData, f64> *toPrune,
@@ -170,33 +154,6 @@ void mergeHelper(edge<geneData, f64> **toSort, csize_t leftIndex,
 }
 
 
-void removeWeakVerticies(graph<geneData, f64> *geneNetwork, cf64 TL1, 
-                                                    cf64 TL2, cf64 TL3){
-  //first, we need to remove all nodes which do not have 3 available
-  //links.  It's technically possible, and technically possible for new
-  //ones to occur after a given removal so this is expensive...
-  bool disconnectedVerticiesFound;
-  do{
-    disconnectedVerticiesFound = false;
-    for(size_t i = 0; i < geneNetwork->getNumVertexes(); i++){
-      vertex<geneData, f64> *target = geneNetwork->getVertexes()[i];
-      if(3 > target->getNumEdges()){
-        geneNetwork->removeVertex(target);
-        disconnectedVerticiesFound = true;
-      }else{
-        cf64 threeSigmaReq = target->getEdges()[0]->weight;
-        cf64 twoSigmaReq   = target->getEdges()[1]->weight;
-        cf64 oneSigmaReq   = target->getEdges()[2]->weight;
-        if(TL1 > threeSigmaReq || TL2 > twoSigmaReq || TL3 > oneSigmaReq){
-          geneNetwork->removeVertex(target);
-          disconnectedVerticiesFound = true;
-        }
-      }
-    }
-  }while(disconnectedVerticiesFound);
-}
-
-
 struct config loadConfig(){
   struct config settings;
   ifstream configFile;
@@ -214,7 +171,7 @@ struct config loadConfig(){
   configFile.open("SCCM_pipe.cfg");
   
   if(!configFile.is_open()){
-    cout << "ERROR: cannot open required file \"SCCM_pipe.cfg\"" << endl;
+    cerr << "ERROR: cannot open required file \"SCCM_pipe.cfg\"" << endl;
     exit(1);
   }
   
@@ -226,7 +183,7 @@ struct config loadConfig(){
       size_t endIndex = line.find("#");
       if(string::npos == endIndex) endIndex = line.size();
       string readValue = line.substr(startIndex, endIndex - startIndex);
-      cout << "setting geneList to " << readValue << endl;
+      cerr << "setting geneList to " << readValue << endl;
       settings.geneListFile = readValue;
       continue;
     }
@@ -235,7 +192,7 @@ struct config loadConfig(){
       size_t endIndex = line.find("#");
       if(string::npos == endIndex) endIndex = line.size();
       string readValue = line.substr(startIndex, endIndex - startIndex);
-      cout << "setting expression to " << readValue << endl;
+      cerr << "setting expression to " << readValue << endl;
       settings.expressionFile = readValue;
       continue;
     }
@@ -244,8 +201,13 @@ struct config loadConfig(){
       size_t endIndex = line.find("#");
       if(string::npos == endIndex) endIndex = line.size();
       string readValue = line.substr(startIndex, endIndex - startIndex);
-      cout << "setting topPick to " << readValue << endl;
-      settings.keepTopN = atoi(readValue.c_str());
+      cerr << "setting topPick to " << readValue << endl;
+      int readInt = atoi(readValue.c_str());
+      if(0 > readInt || 255 < readInt){
+        cerr << "Keep Top N value out of bounds (0,255]" << endl;
+        exit(1);
+      }
+      settings.keepTopN = (u8) readInt;
       continue;
     }
     if(string::npos != line.find("kickSize")){
@@ -253,7 +215,7 @@ struct config loadConfig(){
       size_t endIndex = line.find("#");
       if(string::npos == endIndex) endIndex = line.size();
       string readValue = line.substr(startIndex, endIndex - startIndex);
-      cout << "setting kickSize to " << readValue << endl;
+      cerr << "setting kickSize to " << readValue << endl;
       settings.kickSize = atoi(readValue.c_str());
       continue;
     }
@@ -262,7 +224,7 @@ struct config loadConfig(){
       size_t endIndex = line.find("#");
       if(string::npos == endIndex) endIndex = line.size();
       string readValue = line.substr(startIndex, endIndex - startIndex);
-      cout << "setting tripleLink1 to " << readValue << endl;
+      cerr << "setting tripleLink1 to " << readValue << endl;
       settings.tripleLink1 = atof(readValue.c_str());
       continue;
     }
@@ -271,7 +233,7 @@ struct config loadConfig(){
       size_t endIndex = line.find("#") + 1;
       if(string::npos == endIndex) endIndex = line.size();
       string readValue = line.substr(startIndex, endIndex - startIndex);
-      cout << "setting tripleLink2 to " << readValue << endl;
+      cerr << "setting tripleLink2 to " << readValue << endl;
       settings.tripleLink2 = atof(readValue.c_str());
       continue;
     }
@@ -280,54 +242,54 @@ struct config loadConfig(){
       size_t endIndex = line.find("#");
       if(string::npos == endIndex) endIndex = line.size();
       string readValue = line.substr(startIndex, endIndex - startIndex);
-      cout << "setting tripleLink3 to " << readValue << endl;
+      cerr << "setting tripleLink3 to " << readValue << endl;
       settings.tripleLink3 = atof(readValue.c_str());
       continue;
     }
-    cout << "Skipped line \"" << line << "\"" << endl;
+    cerr << "Skipped line \"" << line << "\"" << endl;
   }
   configFile.close();
   
   if(settings.geneListFile != ""){
-    cout << "geneList is in \"" << settings.geneListFile << "\"" << endl;
+    cerr << "geneList is in \"" << settings.geneListFile << "\"" << endl;
   }else{
-    cout << "ERROR: geneList file not set" << endl;
+    cerr << "ERROR: geneList file not set" << endl;
     errorInFile = true;
   }
   if(settings.expressionFile != ""){
-    cout << "expression is in \"" << settings.expressionFile << "\"" << endl;
+    cerr << "expression is in \"" << settings.expressionFile << "\"" << endl;
   }else{
-    cout << "ERROR: expression file not set" << endl;
+    cerr << "ERROR: expression file not set" << endl;
     errorInFile = true;
   }
   
-  cout << "topPick is " << (short) settings.keepTopN << endl;
+  cerr << "topPick is " << (short) settings.keepTopN << endl;
   
-  cout << "kickSize is " << settings.kickSize << endl;
+  cerr << "kickSize is " << settings.kickSize << endl;
   
   if(settings.tripleLink1 < 0){
-    cout << "ERROR: tripleLink1 is less than 0" << endl;
+    cerr << "ERROR: tripleLink1 is less than 0" << endl;
     errorInFile = true;
   }else if(settings.tripleLink1 < settings.tripleLink2){
-    cout << "ERROR: tripleLink1 is smaller than tripleLink2" << endl;
+    cerr << "ERROR: tripleLink1 is smaller than tripleLink2" << endl;
     errorInFile = true;
   }else{
-    cout << "tripleLink1 is " << settings.tripleLink1 << endl;
+    cerr << "tripleLink1 is " << settings.tripleLink1 << endl;
   }
   if(settings.tripleLink2 < 0){
-    cout << "ERROR: tripleLink2 is less than 0" << endl;
+    cerr << "ERROR: tripleLink2 is less than 0" << endl;
     errorInFile = true;
   }else if(settings.tripleLink2 < settings.tripleLink3){
-    cout << "ERROR: tripleLink2 is smaller than tripleLink3" << endl;
+    cerr << "ERROR: tripleLink2 is smaller than tripleLink3" << endl;
     errorInFile = true;
   }else{
-    cout << "tripleLink2 is " << settings.tripleLink2 << endl;
+    cerr << "tripleLink2 is " << settings.tripleLink2 << endl;
   }
   if(settings.tripleLink3 < 0){
-    cout << "ERROR: tripleLink3 is smaller than 0" << endl;
+    cerr << "ERROR: tripleLink3 is smaller than 0" << endl;
     errorInFile = true;
   }else{
-    cout << "tripleLink3 is " << settings.tripleLink3 << endl;
+    cerr << "tripleLink3 is " << settings.tripleLink3 << endl;
   }
   
   if(errorInFile) exit(1);
@@ -337,23 +299,25 @@ struct config loadConfig(){
 }
 
 
-void printClusters(vector< graph<geneData, f64>* > clusters){
-  for(size_t i = 0; i < clusters.size(); i++){
-    cout << "Cluster " << (i+1) << ": " << endl;
-    for(size_t j = 0; j < clusters[i]->getNumVertexes(); j++){
-      cout << clusters[i]->getVertexes()[j]->value.getName() << endl;
+void printClusters(queue< queue<size_t> > clusters, const vector<string> &names){
+  for(size_t i = 0; !clusters.empty(); i++){
+    cout << endl << "Cluster " << (i+1) << " : ";
+    while(!clusters.front().empty()){
+      cout << "\t" << names[clusters.front().front()];
+      clusters.front().pop();
     }
     cout << endl;
+    clusters.pop();
   }
 }
 
 
-template <typename T> vector<T> range(const vector<T> &in, 
+/*template <typename T> vector<T> range(const vector<T> &in, 
                                 csize_t &start, csize_t &end){
   vector<T> tr;
   for(size_t i = start; i < end; i++) tr.push_back(in[i]);
   return tr;
-}
+}*/
 
 
 struct correlationMatrix sortWeights(struct correlationMatrix &protoGraph, 
@@ -361,10 +325,10 @@ struct correlationMatrix sortWeights(struct correlationMatrix &protoGraph,
   pthread_t *workers;
   struct addTopEdgesHelperStruct *toSend;
   
-  //cu32 numCPUs = thread::hardware_concurrency() < protoGraph.labels.size() ? 
-  //                          thread::hardware_concurrency() : protoGraph.labels.size();
+  csize_t numCPUs = thread::hardware_concurrency() < protoGraph.labels.size() ? 
+                            thread::hardware_concurrency() : protoGraph.labels.size();
   
-  cu32 numCPUs = 1;
+  //cu32 numCPUs = 1;
                             
   toSend = (struct addTopEdgesHelperStruct*) malloc(sizeof(*toSend) * numCPUs);
   
@@ -376,17 +340,13 @@ struct correlationMatrix sortWeights(struct correlationMatrix &protoGraph,
     toSend[anItr].startIndex = (anItr * protoGraph.labels.size())/numCPUs;
     toSend[anItr].endIndex =   ((anItr+1) * protoGraph.labels.size())/numCPUs;
     toSend[anItr].keepTopN = keepTopN;
-    //cout << "Dispatching worker " << anItr << " to prune entries " 
-    //     << toSend[anItr].startIndex << " to " << toSend[anItr].endIndex 
-    //     << endl;
     pthread_create(&workers[anItr], NULL, addTopEdgesHelper, &toSend[anItr]);
-    //addTopEdgesHelper(&toSend[anItr]);
     anItr++;
   }
   
-  //void *toIgnore;
-  //for(anItr = 0; anItr < numCPUs; anItr++)
-  //  pthread_join(workers[anItr], &toIgnore);
+  void *toIgnore;
+  for(anItr = 0; anItr < numCPUs; anItr++)
+    pthread_join(workers[anItr], &toIgnore);
   
   free(toSend);
   free(workers);
@@ -416,14 +376,9 @@ void *addTopEdgesHelper(void *protoArgs){
     size_t size;
     
     size = protoGraph->colSize[i];
-    //printf("%lu copy data of size %lu\n", i, size);  fflush(stdout);
     
     workSpace = protoGraph->matrix[i];
-    if(NULL == workSpace){
-      continue;
-    }
-    
-    //printf("%lu presort\n", i);  fflush(stdout);
+    if(NULL == workSpace) continue;
     
     //sort
     //Quickmerge
@@ -460,17 +415,6 @@ void *addTopEdgesHelper(void *protoArgs){
         csize_t copySize = (rightEnd - leftStart) * sizeof(*sortSpace);
         IOISwap.push(leftStart);
         
-        bool shouldExit = false;
-        if(leftPtr >= leftEnd){
-          printf("ERROR: indexes shuffled!  leftPtr (%lu) >= leftEnd (%lu)\n", leftPtr, leftEnd);
-          shouldExit = true;
-        }
-        if(rightPtr >= rightEnd){ 
-          printf("ERROR: indexes shuffled!  rightPtr (%lu) >= rightEnd (%lu)\n", rightPtr, rightEnd);
-          shouldExit = true;
-        }
-        if(shouldExit) free(NULL);
-        
         while(leftPtr < leftEnd && rightPtr < rightEnd){
           if(workSpace[leftPtr].second > workSpace[rightPtr].second)
             sortSpace[itr++] = workSpace[leftPtr++];
@@ -492,8 +436,11 @@ void *addTopEdgesHelper(void *protoArgs){
       while(!IOISwap.empty()) IOISwap.pop();
     }
     
-    void *tmpPtr =  realloc(protoGraph->matrix[i], keepTopN * sizeof(*protoGraph->matrix[i]));
-    protoGraph->matrix[i] = (pair<size_t, f64>*) tmpPtr;
+    if(keepTopN < size){
+      protoGraph->colSize[i] = keepTopN;
+      void *tmpPtr =  realloc(protoGraph->matrix[i], protoGraph->colSize[i] * sizeof(*protoGraph->matrix[i]));
+      protoGraph->matrix[i] = (pair<size_t, f64>*) tmpPtr;
+    }
     
   }
   
@@ -510,22 +457,109 @@ graph<geneData, f64>* constructGraph(const struct correlationMatrix &protoGraph)
   tr = new graph<geneData, f64>();
   tr->hintNumVertexes(protoGraph.matrix.size());
   
+  for(size_t i = 0; i < protoGraph.matrix.size(); i++){
+    vertex<geneData, double> *target = tr->addVertex(geneData(i));
+    target->hintNumEdges(protoGraph.colSize[i]);
+  }
+  
   edgeCount = 0;
   for(size_t i = 0; i < protoGraph.matrix.size(); i++)
     edgeCount += protoGraph.colSize[i];
   tr->hintNumEdges(edgeCount);
   
   for(size_t i = 0; i < protoGraph.matrix.size(); i++){
-    geneData tmpL;
-    tmpL.construct().setName(protoGraph.labels[i]);
-    vertex<geneData, f64> *leftVert = tr->addVertex(tmpL);
-    
+    vertex<geneData, f64> *leftVert = tr->getVertexForValue(geneData(i));
     for(size_t j = 0; j < protoGraph.colSize[i]; j++){
-      geneData tmpR;
-      tmpR.construct().setName(protoGraph.labels[j]);
-      tr->addEdge(leftVert , tr->addVertex(tmpR), protoGraph.matrix[i][j].second);
+      vertex<geneData, f64> *rightVert = tr->getVertexForValue(geneData(protoGraph.matrix[i][j].first));
+      if(leftVert == rightVert) raise(SIGABRT);
+      tr->addEdge(leftVert , rightVert, protoGraph.matrix[i][j].second);
     }
   }
   
   return tr;
+}
+
+
+void pruneGraph(graph<geneData, f64> *corrData, u8 keepTopN){
+  edge<geneData, f64> **workSpace, **sortSpace;
+  workSpace = (edge<geneData, f64>**) malloc(sizeof(*workSpace) * corrData->getNumEdges());
+  sortSpace = (edge<geneData, f64>**) malloc(sizeof(*sortSpace) * corrData->getNumEdges());
+  
+  for(size_t i = 0; i < corrData->getNumVertexes(); i++){
+    queue<size_t> indiciesOfInterest;
+    queue<size_t> IOISwap;
+    edge<geneData, f64> *swap;
+    size_t count[2] = {0, 0};
+    
+    vertex<geneData, f64> *target = corrData->getVertexes()[i];
+    size_t size = target->getNumEdges();
+    
+    if(size <= keepTopN) continue;
+    
+    for(size_t j = 0; j < size; j++)
+      workSpace[j] = target->getEdges()[j];
+    
+    //Quickmerge start//////////////////////////////////////////////////
+    
+    
+    for(size_t j = 0; j < size-1; j++){
+      if(workSpace[j]->weight < workSpace[j+1]->weight) count[0]++;
+      else if(workSpace[j]->weight > workSpace[j+1]->weight) count[1]++;
+    }
+    
+    if(count[0] > count[1])
+      for(size_t j = 0; j <= size/2; j++){
+        swap = workSpace[j];
+        workSpace[j] = workSpace[(size-1) - j];
+        workSpace[(size - 1) - j] = swap;
+      }
+    
+    indiciesOfInterest.push(0);
+    for(size_t j = 1; j < size; j++)
+      if(workSpace[j-1]->weight < workSpace[j]->weight)
+        indiciesOfInterest.push(j);
+    indiciesOfInterest.push(size);
+    
+    
+    while(indiciesOfInterest.size() > 2){
+      while(indiciesOfInterest.size() > 2){
+        size_t leftPtr, rightPtr, itr;
+        csize_t leftStart = indiciesOfInterest.front(); indiciesOfInterest.pop();
+        csize_t leftEnd = indiciesOfInterest.front();  indiciesOfInterest.pop();
+        csize_t rightEnd = indiciesOfInterest.front();
+        itr = 0;
+        leftPtr = leftStart;
+        rightPtr = leftEnd;
+        csize_t copySize = (rightEnd - leftStart) * sizeof(*sortSpace);
+        IOISwap.push(leftStart);
+        
+        while(leftPtr < leftEnd && rightPtr < rightEnd){
+          if(workSpace[leftPtr]->weight > workSpace[rightPtr]->weight)
+            sortSpace[itr++] = workSpace[leftPtr++];
+          else
+            sortSpace[itr++] = workSpace[rightPtr++];
+        }
+        while(leftPtr < leftEnd)   sortSpace[itr++] = workSpace[leftPtr++];
+        while(rightPtr < rightEnd) sortSpace[itr++] = workSpace[rightPtr++];
+        
+        memcpy(&workSpace[leftStart], sortSpace, copySize);
+      }
+      if(indiciesOfInterest.size() == 2){
+        IOISwap.push(indiciesOfInterest.front());
+        indiciesOfInterest.pop();
+      }
+      IOISwap.push(size);
+      
+      indiciesOfInterest = IOISwap;
+      while(!IOISwap.empty()) IOISwap.pop();
+    }
+    
+    //Quickmerge end////////////////////////////////////////////////////
+    
+    for(size_t i = keepTopN; i < size; i++)
+      corrData->removeEdge(workSpace[i]);
+    
+  }
+  free(workSpace);
+  free(sortSpace);
 }

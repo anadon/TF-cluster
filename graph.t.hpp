@@ -19,15 +19,16 @@ template <typename T, typename U> graph<T, U>::graph(){
 
 
 template <typename T, typename U> graph<T, U>::~graph(){
-  for(size_t i = 0; i < numEdges; i++)
-     delete edgeArray[i];
-  free(edgeArray);
   
-  for(size_t i = 0; i < numVertexes; i++){
-    vertexArray[i]->clear();//TODO once debugging is complete, wrap clear into ~?
-    delete vertexArray[i];
-  }
-  free(vertexArray);
+  while(numEdges)  removeEdge(edgeArray[numEdges-1]);
+  //free(edgeArray);
+  
+  while(numVertexes) removeVertex(vertexArray[numVertexes-1]);
+  //free(vertexArray);
+  
+  //for(size_t i = 0; i < numEdges; i++)
+  //   delete edgeArray[i];
+  //free(edgeArray);
   
   geneNameToNodeID.clear();
 }
@@ -43,9 +44,9 @@ template <typename T, typename U> U graph<T, U>::removeEdge(edge<T, U> *toRemove
   
   tr = edgeArray[edgeIndex]->weight;
   --numEdges;
+  edgeArray[numEdges]->edgeID = edgeIndex;
   delete edgeArray[edgeIndex];
   edgeArray[edgeIndex] = edgeArray[numEdges];
-  edgeArray[edgeIndex]->edgeID = edgeIndex;
 
   memCheck = realloc(edgeArray, sizeof(*edgeArray) * numEdges);
   edgeArray = (edge<T, U>**) memCheck;
@@ -54,23 +55,29 @@ template <typename T, typename U> U graph<T, U>::removeEdge(edge<T, U> *toRemove
 }
 
 
-template <typename T, typename U> T graph<T, U>::removeVertex(vertex<T, U> *toRemove){
+//TODO: update vertex address in hash
+template <typename T, typename U> T graph<T, U>::removeVertex(const vertex<T, U> *toRemove){
   const size_t nodeIndex = toRemove->vertexIndex;
+  vertex<T, U> *target = vertexArray[nodeIndex];
   void *memCheck;
-  T tr;
+
   
+  if(NULL == toRemove)  raise(SIGABRT);
   if(nodeIndex >= numVertexes)  raise(SIGABRT);
-  if(toRemove != vertexArray[nodeIndex])  raise(SIGABRT);
+  if(toRemove != target)  raise(SIGABRT);
 
-  while(toRemove->getNumEdges())
-    removeEdge(toRemove->getEdges()[toRemove->getNumEdges()-1]);
+  while(target->getNumEdges())
+    removeEdge(target->getEdges()[target->getNumEdges()-1]);
 
-  tr = vertexArray[nodeIndex]->value;
+  T tr = vertexArray[nodeIndex]->value;
+  
+  //Always remember, update THEN remove.
+  geneNameToNodeID[vertexArray[numVertexes-1]->value] = nodeIndex;
+  vertexArray[numVertexes-1]->vertexIndex = nodeIndex;
+  vertexArray[nodeIndex] = vertexArray[numVertexes-1];
   
   geneNameToNodeID.erase(tr);
-  delete vertexArray[nodeIndex];
-  vertexArray[nodeIndex] = vertexArray[numVertexes-1];
-  vertexArray[nodeIndex]->updateIndex(nodeIndex);
+  delete target;
 
   --numVertexes;
   memCheck = realloc(vertexArray, sizeof(*vertexArray) * numVertexes);
@@ -80,9 +87,9 @@ template <typename T, typename U> T graph<T, U>::removeVertex(vertex<T, U> *toRe
 }
 
 
-template <typename T, typename U> T graph<T, U>::removeVertex(T value){
+/*template <typename T, typename U> T graph<T, U>::removeVertex(T value){
   return removeVertex(getVertexForValue(value));
-}
+}*/
 
 
 template <typename T, typename U> vertex<T, U>* graph<T, U>::addVertex(T data){
@@ -104,8 +111,9 @@ template <typename T, typename U> vertex<T, U>* graph<T, U>::addVertex(T data){
 template <typename T, typename U> edge<T, U>* graph<T, U>::addEdge(
                   vertex<T, U> *left, vertex<T, U> *right, U newWeight){
   
-  if(0 == geneNameToNodeID.count(left->value))  raise(SIGABRT);  
-  if(0 == geneNameToNodeID.count(right->value)) raise(SIGABRT);
+  //if(0 == geneNameToNodeID.count(left->value))  raise(SIGABRT);  
+  //if(0 == geneNameToNodeID.count(right->value)) raise(SIGABRT);
+  //if(left == right) raise(SIGABRT);
   
   ensureEdgeCapacity(numEdges + 1);
   
@@ -127,6 +135,11 @@ template <typename T, typename U> edge<T, U>* graph<T, U>::addEdge(
 
 template <typename T, typename U> edge<T, U>** graph<T, U>::getEdges(){
   return (edge<T, U>**) edgeArray;
+}
+
+
+template <typename T, typename U>const edge<T, U>** graph<T, U>::getEdges() const{
+  return (const edge<T, U>**) edgeArray;
 }
 
 
@@ -166,7 +179,7 @@ template <typename T, typename U> graph<T, U>& graph<T, U>::operator=(const grap
 }
 
 
-template <typename T, typename U> vertex<T, U>* graph<T, U>::getVertexForValue(const T testValue){
+template <typename T, typename U> vertex<T, U>* graph<T, U>::getVertexForValue(const T &testValue){
   if(geneNameToNodeID.count(testValue)) 
     return vertexArray[geneNameToNodeID[testValue]];
   return NULL;

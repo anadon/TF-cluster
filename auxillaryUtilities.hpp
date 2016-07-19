@@ -1,6 +1,7 @@
 #ifndef AUXILLARY_UTILITIES_HPP
 #define AUXILLARY_UTILITIES_HPP
 
+#include <queue>
 #include <vector>
 #include <string>
 #include <utility>
@@ -14,6 +15,7 @@ using std::hash;
 using std::pair;
 using std::size_t;
 using std::string;
+using std::queue;
 using std::vector;
 
 
@@ -62,12 +64,6 @@ struct config loadConfig();
 struct loadFromFileReturn loadFromFile(const string geneListFile);
 
 
-//TODO make multithreading safe
-//Quick merge, keep upper values
-//this is not multithreading safe, but can be made safe.
-void prune(vertex<geneData, f64> *toPrune, u8 keepTopN = 100);
-
-
 void quickMergeEdges(vertex<geneData, f64> *toPrune,
                                                     csize_t size);
 
@@ -76,23 +72,16 @@ void mergeHelper(edge<geneData, f64> **toSort,
                         csize_t leftIndex, csize_t rightIndex, 
                                                 csize_t endIndex);
 
-
-//void pruneGraph(graph<geneData, f64> *geneNetwork, u8 keepTopN);
-                                                  
-void removeWeakVerticies(graph<geneData, f64> *geneNetwork, cf64 TL1, 
-                                                    cf64 TL2, cf64 TL3);
-
-void printClusters(vector< graph<geneData, f64>* > clusters);
+void printClusters(queue< queue<size_t> > clusters, const vector<string> &names);
 
 void printEdges(graph<geneData, f64> *corrData);
-
-template <typename T> vector<T> range(const vector<T> &in, 
-                                csize_t &start, csize_t &end);
 
 struct correlationMatrix sortWeights(struct correlationMatrix &protoGraph, cu8 keepTopN);
 
 void *addTopEdgesHelper(void *protoArgs);
 
 graph<geneData, f64>* constructGraph(const struct correlationMatrix &protoGraph);
+
+void pruneGraph(graph<geneData, f64> *corrData, u8 keepTopN);
 
 #endif

@@ -7,7 +7,7 @@
 
 template <typename T, typename U> vertex<T, U>::vertex(size_t index, T data):
                                         vertexIndex(index), value(data){
-  numEdges = 0;
+  numEdges = edgesSize = 0;
   edges = (edge<T, U>**) NULL;
 }
 
@@ -23,12 +23,7 @@ template <typename T, typename U> vertex<T, U>::~vertex(){
 
 
 template <typename T, typename U> size_t vertex<T, U>::addEdge(edge<T, U> *toRegister){
-  void *memCheck;
-
-  memCheck = realloc(edges, (numEdges+1) * sizeof(*edges));
-  if(NULL == memCheck)  raise(SIGABRT);
-  edges = (edge<T, U>**) memCheck;
-  
+  ensureEdgeCapacity(numEdges+1);
   edges[numEdges] = toRegister;
   numEdges++;
 
@@ -37,8 +32,8 @@ template <typename T, typename U> size_t vertex<T, U>::addEdge(edge<T, U> *toReg
 
 
 template <typename T, typename U> void vertex<T, U>::removeEdge(edge<T, U> *toRemove){
-  edge<T, U> *tmp;
   void *memCheck;
+  edge<T, U> *tmp;
   size_t targetEdgeIndex = 0;
   
   
@@ -71,11 +66,6 @@ template <typename T, typename U> void vertex<T, U>::removeEdge(edge<T, U> *toRe
   memCheck = realloc(edges, numEdges * sizeof(*edges));
   edges = (edge<T, U>**) memCheck;
 }
-  
-  
-template <typename T, typename U> void vertex<T, U>::updateIndex(size_t newIndex){
-  vertexIndex = newIndex;
-}
 
 
 template <typename T, typename U> void vertex<T, U>::clear(){
@@ -92,4 +82,33 @@ template <typename T, typename U> inline bool vertex<T, U>::operator==(const ver
 
 template <typename T, typename U> edge<T, U>** vertex<T, U>::getEdges(){
   return edges;
+}
+
+  
+template <typename T, typename U> const edge<T, U>** vertex<T, U>::getEdges() const{
+  return (const edge<T, U>**) edges;
+}
+
+
+template <typename T, typename U> void vertex<T, U>::hintNumEdges(const size_t suggestSize){
+  void *tmpPtr;
+  
+  if(suggestSize <= numEdges) return;
+  
+  tmpPtr = realloc(edges, sizeof(*edges) * suggestSize);
+  if(NULL == tmpPtr) raise(SIGABRT);
+  edges = (edge<geneData, double>**) tmpPtr;
+  
+  edgesSize = suggestSize;
+}
+  
+
+template <typename T, typename U> void vertex<T, U>::shrinkEdgeCapacityToFit(){
+  hintNumEdges(numEdges);
+}
+
+
+template <typename T, typename U> void vertex<T, U>::ensureEdgeCapacity(const size_t size){
+  while(size > edgesSize)
+    hintNumEdges(1 + (edgesSize << 1));
 }
