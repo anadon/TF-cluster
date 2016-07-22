@@ -24,6 +24,10 @@ void printCorrelationMatrix(const struct correlationMatrix &protoGraph){
   //unordered_map<string, size_t> labelLookup;
   //vector<string> labels;
   //vector<size_t> colSize;
+  printf("\t");
+  for(size_t i = 0; i < protoGraph.matrix.size();i++)
+    printf("%s\t", protoGraph.labels[i].c_str());
+  
   
   for(size_t i = 0; i < protoGraph.matrix.size(); i++){
     printf("%s\t", protoGraph.labels[i].c_str());
@@ -66,7 +70,12 @@ int main(int argc, char **argv){
   
   cerr << "Loading correlation matrix..."; fflush(stderr);
   protoGraph = generateFullMatrixFromFile(settings.expressionFile, settings.tripleLink3);
-  cerr << "done!" << endl;
+  cerr << "done" << endl;
+  
+  cerr << "Printing correlation matrix...";
+  printCorrelationMatrix(protoGraph);
+  cerr << "done" << endl;
+  return 0;
   
   /*if(!isProtoGraphValid(protoGraph)){
     cout << "given matrix is invalid!" << endl;

@@ -301,12 +301,11 @@ struct config loadConfig(){
 
 void printClusters(queue< queue<size_t> > clusters, const vector<string> &names){
   for(size_t i = 0; !clusters.empty(); i++){
-    cout << endl << "Cluster " << (i+1) << " : ";
+    cout << "cluster: " << (i+1) << endl;
     while(!clusters.front().empty()){
-      cout << "\t" << names[clusters.front().front()];
+      cout << names[clusters.front().front()] << endl;
       clusters.front().pop();
     }
-    cout << endl;
     clusters.pop();
   }
 }
