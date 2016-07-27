@@ -198,6 +198,7 @@ template <typename T, typename U> void graph<T, U>::hintNumEdges(const size_t su
     edgeArray = (edge<T, U>**) memCheck;
     edgeArraySize = suggestSize;
   }else{
+    fprintf(stderr, "ERROR: Could not allocate edges\n"); fflush(stderr);
     raise(SIGABRT);
   }
 }

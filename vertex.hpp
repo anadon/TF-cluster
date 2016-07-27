@@ -42,7 +42,7 @@ template <typename T, typename U> class vertex{
   
   void hintNumEdges(const size_t suggestSize);
   
-  void shrinkEdgeCapacityToFit();
+  void shrinkToFit();
   
   bool operator==(const vertex<T, U> &other) const;
   

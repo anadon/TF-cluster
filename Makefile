@@ -1,6 +1,6 @@
 CPP=g++
-#CFLAGS=-ggdb -pg -O0 -pipe -Wall -Wextra -Wconversion -std=c++11 -march=native
-CFLAGS=-O3 -pipe -Wall -Wextra -Wconversion -std=c++0x -march=native
+CFLAGS=-ggdb -pg -O0 -pipe -Wall -Wextra -Wconversion -std=c++11 -march=native
+#CFLAGS=-O3 -pipe -Wall -Wextra -Wconversion -std=c++0x -march=native
 LIBS=-pthread 
 CMTX=correlation-matrix.a
 
@@ -26,7 +26,8 @@ $(CMTX_INCLUDE):$(CMTX)
 	cp correlation-matrix/correlation-matrix.hpp .
 
 $(CMTX):
-	git submodule update correlation-matrix
+	git submodule update --remote
+	#git submodule update correlation-matrix
 	#cd correlation-matrix ; git pull
 	cd correlation-matrix ; make
 	mv correlation-matrix/correlation-matrix.a .

@@ -35,9 +35,9 @@ struct config{
   string expressionFile;
   u8 keepTopN;
   size_t kickSize;  
-  f64 tripleLink1;
-  f64 tripleLink2;
-  f64 tripleLink3;
+  f64 threeSigma;
+  f64 twoSigma;
+  f64 oneSigma;
 };
 
 
@@ -58,30 +58,34 @@ struct addTopEdgesHelperStruct{
 int verifyInput(int argc, char **argv, const string geneListFile);
 
 
-struct config loadConfig();
+struct config loadConfig(const char *configFilePath);
 
 
-struct loadFromFileReturn loadFromFile(const string geneListFile);
+//struct loadFromFileReturn loadFromFile(const string geneListFile);
 
 
 void quickMergeEdges(vertex<geneData, f64> *toPrune,
                                                     csize_t size);
 
-
-void mergeHelper(edge<geneData, f64> **toSort, 
-                        csize_t leftIndex, csize_t rightIndex, 
-                                                csize_t endIndex);
-
 void printClusters(queue< queue<size_t> > clusters, const vector<string> &names);
 
 void printEdges(graph<geneData, f64> *corrData);
 
+//struct correlationMatrix sortWeights(struct correlationMatrix &protoGraph, cu8 keepTopN);
+
 struct correlationMatrix sortWeights(struct correlationMatrix &protoGraph, cu8 keepTopN);
 
-void *addTopEdgesHelper(void *protoArgs);
-
-graph<geneData, f64>* constructGraph(const struct correlationMatrix &protoGraph);
+graph<geneData, f64>* constructGraph(const struct UDCorrelationMatrix &protoGraph, 
+                      cf64 threeSigma, cf64 oneSigma, cu8 maxNumEdges);
 
 void pruneGraph(graph<geneData, f64> *corrData, u8 keepTopN);
+
+void sortDoubleSizeTPairHighToLow(pair<f64, size_t> *toSort, csize_t size);
+
+void sortDoubleSizeTPairHighToLowHelper(pair<f64, size_t> *toSort, 
+                csize_t leftIndex, csize_t rightIndex, csize_t endIndex, 
+                                          pair<f64, size_t> *sortSpace);
+
+void sortDoubleSizeTPairLowToHigh(pair<f64, size_t> *toSort, csize_t size);
 
 #endif

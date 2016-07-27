@@ -103,7 +103,7 @@ template <typename T, typename U> void vertex<T, U>::hintNumEdges(const size_t s
 }
   
 
-template <typename T, typename U> void vertex<T, U>::shrinkEdgeCapacityToFit(){
+template <typename T, typename U> void vertex<T, U>::shrinkToFit(){
   hintNumEdges(numEdges);
 }
 

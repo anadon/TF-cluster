@@ -19,7 +19,7 @@ Input: 1 file name or input from stdin.
 using std::cerr;
 
 
-void printCorrelationMatrix(const struct correlationMatrix &protoGraph){
+/*void printCorrelationMatrix(const struct correlationMatrix &protoGraph){
   //vector< pair<size_t, double>* > matrix;
   //unordered_map<string, size_t> labelLookup;
   //vector<string> labels;
@@ -47,6 +47,22 @@ bool isProtoGraphValid(const struct correlationMatrix &protoGraph){
     }
   }
   return true;
+}*/
+
+
+//print graph to make sense of it's contents.
+void printGraph(graph<geneData, f64> *corrData, const vector<string> &labels){
+  for(size_t i = 0; i < corrData->getNumVertexes(); i++){
+    fprintf(stderr, "%s\n[", labels[corrData->getVertexes()[i]->value.nameIndex].c_str());
+    for(size_t j = 0; j < corrData->getVertexes()[i]->getNumEdges(); j++){
+      fprintf(stderr, "{%s , %lf}\t", 
+labels[corrData->getVertexes()[i]->getEdges()[j]->other(corrData->getVertexes()[i])->value.nameIndex].c_str(), 
+                        corrData->getVertexes()[i]->getEdges()[j]->weight); 
+    }
+    fprintf(stderr, "]\n\n"
+"========================================================================"
+"\n\n");
+  }
 }
 
 
@@ -55,10 +71,11 @@ int main(int argc, char **argv){
   struct config settings;
   int error;
   queue< queue<size_t> > result;
-  struct correlationMatrix protoGraph;
+  struct UDCorrelationMatrix protoGraph;
 
+  //TODO: this can be safer
   cerr << "Loading configuration...";
-  settings = loadConfig();
+  settings = loadConfig(argv[1]);
   cerr << "Loaded" << endl;
   cerr << "verifying input...";
   error = verifyInput(argc, argv, settings.geneListFile);
@@ -69,49 +86,31 @@ int main(int argc, char **argv){
   cerr << "valid" << endl;
   
   cerr << "Loading correlation matrix..."; fflush(stderr);
-  protoGraph = generateFullMatrixFromFile(settings.expressionFile, settings.tripleLink3);
+  protoGraph = generateUDMatrixFromFile(settings.expressionFile.c_str());
+  convertCoeffToSigmaValue(protoGraph);
   cerr << "done" << endl;
   
-  cerr << "Printing correlation matrix...";
-  printCorrelationMatrix(protoGraph);
-  cerr << "done" << endl;
-  return 0;
-  
-  /*if(!isProtoGraphValid(protoGraph)){
-    cout << "given matrix is invalid!" << endl;
-    raise(SIGABRT);
-  }*/
-  
-  cerr << "Sorting and selecting edges..."; fflush(stderr);
-  protoGraph = sortWeights(protoGraph, settings.keepTopN);
-  cerr << "done" << endl;
-  
-  if(!isProtoGraphValid(protoGraph)){
-    cerr << "sorted matrix is invalid!" << endl;
-    raise(SIGABRT);
+  if(settings.keepTopN >= protoGraph.labels.size()){
+    cerr << "Too few genes to perform an analysis." << endl;
+    return 0;
   }
-
-  //cout << "Making primary graph structure..."; fflush(stdout);
-  //corrData = new graph<geneData, f64>();
-  //cout << "done" << endl;
+  
+  /*cerr << "Printing correlation matrix...";
+  printCorrelationMatrix(protoGraph);
+  cerr << "done" << endl;*/
   
   cerr << "Making graph..."; fflush(stderr);
-  corrData = constructGraph(protoGraph);
+  corrData = constructGraph(protoGraph, settings.threeSigma, settings.oneSigma, settings.keepTopN);
   cerr << "done" << endl;
   
-  for(size_t i = 0; i < protoGraph.matrix.size(); i++)
-    free(protoGraph.matrix[i]);
-  protoGraph.matrix.clear();
-  protoGraph.labelLookup.clear();
-  protoGraph.colSize.clear();
-  
-  cerr << "Pruning graph..."; fflush(stderr);
-  pruneGraph(corrData, settings.keepTopN);
+  cerr << "Pruning graph...";
   cerr << "done" << endl;
+  
+  //printGraph(corrData, protoGraph.labels);
   
   cerr << "Performing triple link..."; fflush(stderr);
-  result = tripleLink(corrData, settings.tripleLink1, 
-                            settings.tripleLink2);
+  result = tripleLink(corrData, settings.threeSigma, 
+                            settings.twoSigma);
   cerr << "done!" << endl;
   
   printClusters(result, protoGraph.labels);
@@ -120,8 +119,9 @@ int main(int argc, char **argv){
   
   delete corrData;
   //for(size_t i = 0; i < result.size(); i++)
-  //  delete result[i];
-  
+    //result[i].clear();
+    //delete result[i];
+  //result.clear();
 
   return 0;
 }
