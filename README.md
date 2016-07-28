@@ -89,4 +89,5 @@ libc
 
 ##Credits###############################################################
 Programmer: Josh Marshall <jrmarsha@mtu.edu>
+
 Professor:  Hairong Wei at hairong@mtu.edu
