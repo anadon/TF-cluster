@@ -37,3 +37,6 @@ clean:
 	rm -f $(EXEC)
 	rm -f $(CMTX) $(CMTX_INCLUDE)
 	cd correlation-matrix/ ; make clean
+
+install:$(EXEC)
+	install -C -t /usr/bin/ $(EXEC)
