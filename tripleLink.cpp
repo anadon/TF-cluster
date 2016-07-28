@@ -21,6 +21,8 @@
 #include <vector>
 
 #include "auxillaryUtilities.hpp"
+#include "edge.t.hpp"
+#include "vertex.t.hpp"
 #include "graph.t.hpp"
 
 ////////////////////////////////////////////////////////////////////////
@@ -218,11 +220,11 @@ queue<size_t> tripleLinkIteration(graph<geneData, double> *geneNetwork,
   toReturn.push(secondVertex->value.nameIndex);
 
   //Primer connections for triple link
-  markConnectedVertexesPrimer(firstVertex, high, med, geneNetwork, 
+  markConnectedVertexes(firstVertex, threeSigma, twoSigma, geneNetwork, 
                                                             toProcess);
   geneNetwork->removeVertex(firstVertex);
   
-  markConnectedVertexesPrimer(secondVertex, high, med, geneNetwork, 
+  markConnectedVertexes(secondVertex, threeSigma, twoSigma, geneNetwork, 
                                                             toProcess);
   geneNetwork->removeVertex(secondVertex);
 
@@ -237,8 +239,8 @@ queue<size_t> tripleLinkIteration(graph<geneData, double> *geneNetwork,
     
     toReturn.push(connectedVertex->value.nameIndex);
 
-    markConnectedVertexes(connectedVertex, high, med, geneNetwork, 
-                                                            toProcess);
+    markConnectedVertexes(connectedVertex, threeSigma, twoSigma, 
+                                                geneNetwork, toProcess);
     geneNetwork->removeVertex(connectedVertex);
   }
 
@@ -266,5 +268,3 @@ queue< queue<size_t> > tripleLink(graph<geneData, double> *geneNetwork,
 ////////////////////////////////////////////////////////////////////////
 //END///////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////
-
-#endif

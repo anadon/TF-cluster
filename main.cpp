@@ -87,7 +87,7 @@ bool isProtoGraphValid(const struct correlationMatrix &protoGraph){
  * @param[in] toPrint The graph structure to print
  * @param[in] labels
  **********************************************************************/
-void printGraph(const graph<geneData, f64> *toPrint, 
+void printGraph(graph<geneData, f64> *toPrint, 
                                           const vector<string> &labels){
   for(size_t i = 0; i < toPrint->getNumVertexes(); i++){
     fprintf(stderr, "%s\n[ ", 
