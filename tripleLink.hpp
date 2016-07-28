@@ -29,16 +29,16 @@
 ////////////////////////////////////////////////////////////////////////
 
 /*******************************************************************//**
- *  Clustering algorithm described in "TF-Cluster: A pipeline for 
- * identifying functionally coordinated transcription factors via 
- * network decomposition of the shared coexpression connectivity matrix 
+ *  Clustering algorithm described in "TF-Cluster: A pipeline for
+ * identifying functionally coordinated transcription factors via
+ * network decomposition of the shared coexpression connectivity matrix
  * (SCCM)".  Returns a queue of queues, with each subqueue holding label
  * indexes that represent a particular cluster.
- * 
+ *
  * @param[in,out] geneNetwork Graph of genes which are parsed with the
- *                            triple-link algorithm.  The graph is 
+ *                            triple-link algorithm.  The graph is
  *                            modified by this operation.
- * @param[in] threeSigma High value used for strong edges in 
+ * @param[in] threeSigma High value used for strong edges in
  *                       triple-link.
  * @param[in] twoSigma Medium value used for edges in triple-link.
  **********************************************************************/

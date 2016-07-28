@@ -78,16 +78,16 @@ void mergeHelper(edge<geneData, f64> **toSort, csize_t leftIndex,
 /*******************************************************************//**
  *  A helper function to sortDoubleSizeTPairLowToHigh().
  **********************************************************************/
-void sortDoubleSizeTPairLowToHighHelper(pair<f64, size_t> *toSort, 
-                csize_t leftIndex, csize_t rightIndex, csize_t endIndex, 
+void sortDoubleSizeTPairLowToHighHelper(pair<f64, size_t> *toSort,
+                csize_t leftIndex, csize_t rightIndex, csize_t endIndex,
                                           pair<f64, size_t> *sortSpace);
 
 
 /*******************************************************************//**
  *  A helper function to sortDoubleSizeTPairHighToLow().
  **********************************************************************/
-void sortDoubleSizeTPairHighToLowHelper(pair<f64, size_t> *toSort, 
-                csize_t leftIndex, csize_t rightIndex, csize_t endIndex, 
+void sortDoubleSizeTPairHighToLowHelper(pair<f64, size_t> *toSort,
+                csize_t leftIndex, csize_t rightIndex, csize_t endIndex,
                                           pair<f64, size_t> *sortSpace);
 
 ////////////////////////////////////////////////////////////////////////
@@ -103,16 +103,16 @@ int verifyInput(int argc, char **argv, const string geneListFile){
   vector<string> geneList;
   vector< vector<string> > corrMatrix;
   string tmp, headerGeneName, line;
-  
+
   ifstream geneListReader, exprCoeffReader;
-  
+
   geneListReader.open(geneListFile);
-  
+
   if(!geneListReader.good()){
     cout << "could not access \"" << geneListFile << "\"" << endl;
     return EIO;
   }
-  
+
   while(geneListReader.good()){
     string geneName;
     geneListReader >> geneName;
@@ -153,7 +153,7 @@ void quickMergeEdges(vertex<geneData, f64> *toPrune, csize_t size){
 
   i=0;
   for(i = 0; i < size-1; i++){
-    if(toPrune->getEdges()[i]->weight < 
+    if(toPrune->getEdges()[i]->weight <
                                       toPrune->getEdges()[i+1]->weight)
       indiciesOfInterest.push_back(i+1);
   }
@@ -190,9 +190,9 @@ void mergeHelper(edge<geneData, f64> **toSort, csize_t leftIndex,
         toSort[leftParser] > toSort[rightParser] ?
         toSort[leftParser++] : toSort[rightParser++];
 
-  memcpy(&toSort[leftIndex], sortSpace, 
+  memcpy(&toSort[leftIndex], sortSpace,
                               sizeof(*toSort) * (endIndex - leftIndex));
-  
+
   free(sortSpace);
 }
 
@@ -202,7 +202,7 @@ struct config loadConfig(const char *configFilePath){
   ifstream configFile;
   string line;
   bool errorInFile = false;
-  
+
   settings.keepTopN = 100;
   settings.geneListFile = "";
   settings.expressionFile = "";
@@ -210,15 +210,15 @@ struct config loadConfig(const char *configFilePath){
   settings.threeSigma = -1;
   settings.twoSigma = -1;
   settings.oneSigma = -1;
-  
+
   configFile.open(configFilePath);
-  
+
   if(!configFile.is_open()){
-    cerr << "ERROR: cannot open required file \"SCCM_pipe.cfg\"" 
+    cerr << "ERROR: cannot open required file \"SCCM_pipe.cfg\""
          << endl;
     exit(1);
   }
-  
+
   while(getline(configFile, line)){
     if(0 == line.size()) continue;
     if('#' == line[0]) continue;
@@ -293,26 +293,26 @@ struct config loadConfig(const char *configFilePath){
     cerr << "Skipped line \"" << line << "\"" << endl;
   }
   configFile.close();
-  
+
   if(settings.geneListFile != ""){
-    cerr << "geneList is in \"" << settings.geneListFile << "\"" 
+    cerr << "geneList is in \"" << settings.geneListFile << "\""
          << endl;
   }else{
     cerr << "ERROR: geneList file not set" << endl;
     errorInFile = true;
   }
   if(settings.expressionFile != ""){
-    cerr << "expression is in \"" << settings.expressionFile << "\"" 
+    cerr << "expression is in \"" << settings.expressionFile << "\""
          << endl;
   }else{
     cerr << "ERROR: expression file not set" << endl;
     errorInFile = true;
   }
-  
+
   cerr << "topPick is " << (short) settings.keepTopN << endl;
-  
+
   cerr << "kickSize is " << settings.kickSize << endl;
-  
+
   if(settings.threeSigma < 0){
     cerr << "ERROR: threeSigma is less than 0" << endl;
     errorInFile = true;
@@ -337,15 +337,15 @@ struct config loadConfig(const char *configFilePath){
   }else{
     cerr << "oneSigma is " << settings.oneSigma << endl;
   }
-  
+
   if(errorInFile) exit(1);
 
-  
+
   return settings;
 }
 
 
-void printClusters(queue< queue<size_t> > clusters, 
+void printClusters(queue< queue<size_t> > clusters,
                                           const vector<string> &names){
   for(size_t i = 0; !clusters.empty(); i++){
     cout << "cluster: " << (i+1) << endl;
@@ -359,7 +359,7 @@ void printClusters(queue< queue<size_t> > clusters,
 
 
 graph<geneData, f64>* constructGraph(
-          const struct UDCorrelationMatrix &protoGraph, cf64 threeSigma, 
+          const struct UDCorrelationMatrix &protoGraph, cf64 threeSigma,
                                         cf64 oneSigma, cu8 maxNumEdges){
   graph<geneData, f64>* tr;
   size_t intermediateGraphItr;
@@ -367,14 +367,14 @@ graph<geneData, f64>* constructGraph(
   pair<f64, size_t> *toSort, **intermediateGraph;
   size_t *columnSize;
   csize_t width = protoGraph.labels.size();
-  
+
   cerr << "allocating preliminary memory..." << endl;
   intermediateGraphItr = 0;
   tmpPtr = malloc(sizeof(*intermediateGraph) * protoGraph.labels.size());
   intermediateGraph = (pair<f64, size_t>**) tmpPtr;
   tmpPtr = malloc(sizeof(*columnSize) * protoGraph.labels.size());
   columnSize = (size_t*) tmpPtr;
-  
+
   //Construct an intermediate matrix to be entered into the graph.  This
   //is to avoid the high memory cost (and thus time cost) of the graph
   //over manipulating simpler data.
@@ -384,37 +384,37 @@ graph<geneData, f64>* constructGraph(
     size_t baseOffset;
     tmpPtr = malloc(sizeof(*toSort) * (protoGraph.labels.size()-1));
     toSort = (pair<f64, size_t>*) tmpPtr;
-    
-    
+
+
     for(size_t j = 0; j < i; j++){
       baseOffset = (width*(width-1)/2) - (width-j)*((width-j)-1)/2 - j - 1;
       if(oneSigma <= protoGraph.UDMatrix[baseOffset + i])
         toSort[itr++] = pair<f64, size_t>(protoGraph.UDMatrix[baseOffset + i], j);
     }
-    
+
     baseOffset = (width*(width-1)/2) - (width-i)*((width-i)-1)/2 - i - 1;
     for(size_t j = i+1; j < protoGraph.labels.size(); j++)
       if(oneSigma <= protoGraph.UDMatrix[baseOffset + j])
         toSort[itr++] = pair<f64, size_t>(protoGraph.UDMatrix[baseOffset + j], j);
-    
+
     tmpPtr = realloc(toSort, sizeof(*toSort) * itr);
     toSort = (pair<f64, size_t>*) tmpPtr;
-    
+
     if(0 == itr){
       columnSize[intermediateGraphItr] = 0;
       intermediateGraph[intermediateGraphItr++] = NULL;
       continue;
     }
-    
+
     sortDoubleSizeTPairHighToLow(toSort, itr);
-    
+
     size_t shrinkSize;
     if(toSort[0].first < threeSigma)  shrinkSize = 0;//Conditional jump or move depends on uninitialised value(s)
     else if(itr < maxNumEdges)  shrinkSize = itr;
     else                        shrinkSize = maxNumEdges;
     for(; shrinkSize != 0 && toSort[shrinkSize-1].first < oneSigma; shrinkSize--);
     columnSize[intermediateGraphItr] = shrinkSize;
-    
+
     if(0 == shrinkSize){
       free(toSort);
       intermediateGraph[intermediateGraphItr++] = NULL;
@@ -423,10 +423,10 @@ graph<geneData, f64>* constructGraph(
       intermediateGraph[intermediateGraphItr++] = (pair<f64, size_t>*) tmpPtr;
     }
   }
-  
+
   //Now that we don't need the very large UDMatrix in protoGraph, free
   //it.  This is to try very hard to stay within the memory envelope of
-  //the original program.  Granted, I'm not sure the original program 
+  //the original program.  Granted, I'm not sure the original program
   //used double floating point values.
   free(protoGraph.UDMatrix);
 
@@ -436,23 +436,23 @@ graph<geneData, f64>* constructGraph(
   tr = new graph<geneData, f64>();
   size_t totalVertexes, totalEdges;
   totalVertexes = totalEdges = 0;
-  
+
   for(size_t i = 0; i < protoGraph.labels.size(); i++)
     if(columnSize[i]){
       totalVertexes++;
       totalEdges += columnSize[i];
     }
-  
+
   tr->hintNumVertexes(totalVertexes);
   tr->hintNumEdges(totalEdges);
-  
+
   for(size_t i = 0; i < protoGraph.labels.size(); i++){
     if(columnSize[i]){
       vertex<geneData, double> *target = tr->addVertex(geneData(i));
       target->hintNumEdges(columnSize[i]);
     }
   }
-  
+
   for(size_t i = 0; i < protoGraph.labels.size(); i++){
     if(columnSize[i]){
       vertex<geneData, double> *leftVert;
@@ -466,7 +466,7 @@ graph<geneData, f64>* constructGraph(
       }
     }
   }
-  
+
   cerr << "minimizing memory in use by the graph..." << endl;
   for(size_t i = 0; i < protoGraph.labels.size(); i++){
     if(columnSize[i]){
@@ -475,7 +475,7 @@ graph<geneData, f64>* constructGraph(
       target->shrinkToFit();
     }
   }
-  
+
   return tr;
 }
 
@@ -483,54 +483,54 @@ graph<geneData, f64>* constructGraph(
 void pruneGraph(graph<geneData, f64> *corrData, u8 keepTopN){
   edge<geneData, f64> **workSpace, **sortSpace;
   void *tmpPtr;
-  
+
   tmpPtr = malloc(sizeof(*workSpace) * corrData->getNumEdges());
   workSpace = (edge<geneData, f64>**) tmpPtr;
   tmpPtr = malloc(sizeof(*sortSpace) * corrData->getNumEdges());
   sortSpace = (edge<geneData, f64>**) tmpPtr;
-  
+
   for(size_t i = 0; i < corrData->getNumVertexes(); i++){
     queue<size_t> indiciesOfInterest;
     queue<size_t> IOISwap;
     edge<geneData, f64> *swap;
     size_t count[2] = {0, 0};
-    
+
     vertex<geneData, f64> *target = corrData->getVertexes()[i];
     size_t size = target->getNumEdges();
-    
+
     if(size <= keepTopN) continue;
-    
+
     for(size_t j = 0; j < size; j++)
       workSpace[j] = target->getEdges()[j];
-    
+
     //Quickmerge start//////////////////////////////////////////////////
-    
-    
+
+
     for(size_t j = 0; j < size-1; j++){
       if(workSpace[j]->weight < workSpace[j+1]->weight) count[0]++;
       else if(workSpace[j]->weight > workSpace[j+1]->weight) count[1]++;
     }
-    
+
     if(count[0] > count[1])
       for(size_t j = 0; j <= size/2; j++){
         swap = workSpace[j];
         workSpace[j] = workSpace[(size-1) - j];
         workSpace[(size - 1) - j] = swap;
       }
-    
+
     indiciesOfInterest.push(0);
     for(size_t j = 1; j < size; j++)
       if(workSpace[j-1]->weight < workSpace[j]->weight)
         indiciesOfInterest.push(j);
     indiciesOfInterest.push(size);
-    
-    
+
+
     while(indiciesOfInterest.size() > 2){
       while(indiciesOfInterest.size() > 2){
         size_t leftPtr, rightPtr, itr;
-        csize_t leftStart = indiciesOfInterest.front(); 
+        csize_t leftStart = indiciesOfInterest.front();
                                               indiciesOfInterest.pop();
-        csize_t leftEnd = indiciesOfInterest.front();  
+        csize_t leftEnd = indiciesOfInterest.front();
                                               indiciesOfInterest.pop();
         csize_t rightEnd = indiciesOfInterest.front();
         itr = 0;
@@ -538,18 +538,18 @@ void pruneGraph(graph<geneData, f64> *corrData, u8 keepTopN){
         rightPtr = leftEnd;
         csize_t copySize = (rightEnd - leftStart) * sizeof(*sortSpace);
         IOISwap.push(leftStart);
-        
+
         while(leftPtr < leftEnd && rightPtr < rightEnd){
           if(workSpace[leftPtr]->weight > workSpace[rightPtr]->weight)
             sortSpace[itr++] = workSpace[leftPtr++];
           else
             sortSpace[itr++] = workSpace[rightPtr++];
         }
-        while(leftPtr < leftEnd)   
+        while(leftPtr < leftEnd)
                                 sortSpace[itr++] = workSpace[leftPtr++];
-        while(rightPtr < rightEnd) 
+        while(rightPtr < rightEnd)
                               sortSpace[itr++] = workSpace[rightPtr++];
-        
+
         memcpy(&workSpace[leftStart], sortSpace, copySize);
       }
       if(indiciesOfInterest.size() == 2){
@@ -557,16 +557,16 @@ void pruneGraph(graph<geneData, f64> *corrData, u8 keepTopN){
         indiciesOfInterest.pop();
       }
       IOISwap.push(size);
-      
+
       indiciesOfInterest = IOISwap;
       while(!IOISwap.empty()) IOISwap.pop();
     }
-    
+
     //Quickmerge end////////////////////////////////////////////////////
-    
+
     for(size_t i = keepTopN; i < size; i++)
       corrData->removeEdge(workSpace[i]);
-    
+
   }
   free(workSpace);
   free(sortSpace);
@@ -574,12 +574,12 @@ void pruneGraph(graph<geneData, f64> *corrData, u8 keepTopN){
 
 
 //quickMerge
-void sortDoubleSizeTPairHighToLow(pair<f64, size_t> *toSort, 
+void sortDoubleSizeTPairHighToLow(pair<f64, size_t> *toSort,
                                                           csize_t size){
   size_t numRising;
   size_t i;
   void *tmpPtr;
-  
+
   if(1 >= size) return;
 
   numRising = 0;
@@ -611,14 +611,14 @@ void sortDoubleSizeTPairHighToLow(pair<f64, size_t> *toSort,
   pair<f64, size_t> *sortSpace;
   tmpPtr = malloc(sizeof(*sortSpace) * size);
   sortSpace = (pair<f64, size_t>*) tmpPtr;
-  
+
   size_t *newIndiciesOfInterest = new size_t[size];
   while(IOISize > 2){
     size_t NIOISize = 0;
     for(i = 0; i < IOISize-2; i+=2){
-      
-      sortDoubleSizeTPairHighToLowHelper(toSort, indiciesOfInterest[i], 
-                      indiciesOfInterest[i+1], indiciesOfInterest[i+2], 
+
+      sortDoubleSizeTPairHighToLowHelper(toSort, indiciesOfInterest[i],
+                      indiciesOfInterest[i+1], indiciesOfInterest[i+2],
                                                             sortSpace);
 
       newIndiciesOfInterest[NIOISize++] = indiciesOfInterest[i];
@@ -627,20 +627,20 @@ void sortDoubleSizeTPairHighToLow(pair<f64, size_t> *toSort,
       newIndiciesOfInterest[NIOISize++] = indiciesOfInterest[IOISize-2];
     }
     newIndiciesOfInterest[NIOISize++] = size;
-    memcpy(indiciesOfInterest, newIndiciesOfInterest, 
+    memcpy(indiciesOfInterest, newIndiciesOfInterest,
                                 NIOISize * sizeof(*indiciesOfInterest));
     IOISize = NIOISize;
   }
-  
+
   delete indiciesOfInterest;
   delete newIndiciesOfInterest;
   free(sortSpace);
-  
+
 }
 
 
-void sortDoubleSizeTPairHighToLowHelper(pair<f64, size_t> *toSort, 
-                csize_t leftIndex, csize_t rightIndex, csize_t endIndex, 
+void sortDoubleSizeTPairHighToLowHelper(pair<f64, size_t> *toSort,
+                csize_t leftIndex, csize_t rightIndex, csize_t endIndex,
                                           pair<f64, size_t> *sortSpace){
   size_t leftParser, rightParser, mergedParser;
 
@@ -656,17 +656,17 @@ void sortDoubleSizeTPairHighToLowHelper(pair<f64, size_t> *toSort,
     sortSpace[mergedParser++] = toSort[leftParser++];
   while(rightParser < endIndex)
     sortSpace[mergedParser++] = toSort[rightParser++];
-  memcpy(&toSort[leftIndex], sortSpace, 
+  memcpy(&toSort[leftIndex], sortSpace,
                               sizeof(*toSort) * (endIndex - leftIndex));
 }
 
 
-void sortDoubleSizeTPairLowToHigh(pair<f64, size_t> *toSort, 
+void sortDoubleSizeTPairLowToHigh(pair<f64, size_t> *toSort,
                                                           csize_t size){
   size_t numFalling;
   size_t i;
   void *tmpPtr;
-  
+
   if(1 >= size) return;
 
   numFalling = 0;
@@ -698,14 +698,14 @@ void sortDoubleSizeTPairLowToHigh(pair<f64, size_t> *toSort,
   pair<f64, size_t> *sortSpace;
   tmpPtr = malloc(sizeof(*sortSpace) * size);
   sortSpace = (pair<f64, size_t>*) tmpPtr;
-  
+
   size_t *newIndiciesOfInterest = new size_t[size];
   while(IOISize > 2){
     size_t NIOISize = 0;
     for(i = 0; i < IOISize-2; i+=2){
-      
-      sortDoubleSizeTPairLowToHighHelper(toSort, indiciesOfInterest[i], 
-                      indiciesOfInterest[i+1], indiciesOfInterest[i+2], 
+
+      sortDoubleSizeTPairLowToHighHelper(toSort, indiciesOfInterest[i],
+                      indiciesOfInterest[i+1], indiciesOfInterest[i+2],
                                                             sortSpace);
 
       newIndiciesOfInterest[NIOISize++] = indiciesOfInterest[i];
@@ -714,20 +714,20 @@ void sortDoubleSizeTPairLowToHigh(pair<f64, size_t> *toSort,
       newIndiciesOfInterest[NIOISize++] = indiciesOfInterest[IOISize-2];
     }
     newIndiciesOfInterest[NIOISize++] = size;
-    memcpy(indiciesOfInterest, newIndiciesOfInterest, 
+    memcpy(indiciesOfInterest, newIndiciesOfInterest,
                                 NIOISize * sizeof(*indiciesOfInterest));
     IOISize = NIOISize;
   }
-  
+
   delete indiciesOfInterest;
   delete newIndiciesOfInterest;
   free(sortSpace);
-  
+
 }
 
 
-void sortDoubleSizeTPairLowToHighHelper(pair<f64, size_t> *toSort, 
-                csize_t leftIndex, csize_t rightIndex, csize_t endIndex, 
+void sortDoubleSizeTPairLowToHighHelper(pair<f64, size_t> *toSort,
+                csize_t leftIndex, csize_t rightIndex, csize_t endIndex,
                                           pair<f64, size_t> *sortSpace){
   size_t leftParser, rightParser, mergedParser;
 
@@ -743,7 +743,7 @@ void sortDoubleSizeTPairLowToHighHelper(pair<f64, size_t> *toSort,
     sortSpace[mergedParser++] = toSort[leftParser++];
   while(rightParser < endIndex)
     sortSpace[mergedParser++] = toSort[rightParser++];
-  memcpy(&toSort[leftIndex], sortSpace, 
+  memcpy(&toSort[leftIndex], sortSpace,
                               sizeof(*toSort) * (endIndex - leftIndex));
 }
 

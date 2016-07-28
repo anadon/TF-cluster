@@ -43,13 +43,13 @@ template <typename T, typename U> class edge{
 
 /*******************************************************************//**
  *  Make a new edge between two verticies with a given weight.
- * 
+ *
  * @param[in,out] newLeft Left vertex to connect.
  * @param[in,out] newRight Right vertex to connect.
  * @param[in] newWeight Weight value.
  * @param[in] edgeIndex Index of this edge in the containing graph.
  **********************************************************************/
-  edge(vertex<T, U> *newLeft, vertex<T, U> *newRight, U newWeight, 
+  edge(vertex<T, U> *newLeft, vertex<T, U> *newRight, U newWeight,
                                                 const size_t edgeIndex);
 
 
@@ -57,8 +57,8 @@ template <typename T, typename U> class edge{
  *  Basic deconstructor.
  **********************************************************************/
   ~edge();
-  
-  
+
+
 /*******************************************************************//**
  *  Given a connected vertex, tell what the other connected vertex is.
  **********************************************************************/

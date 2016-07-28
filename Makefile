@@ -1,7 +1,7 @@
 CPP=g++
 #CFLAGS=-ggdb -pg -O0 -pipe -Wall -Wextra -Wconversion -std=c++11 -march=native
 CFLAGS=-O3 -pipe -Wall -Wextra -Wconversion -std=c++0x -march=native
-LIBS=-pthread 
+LIBS=-pthread
 CMTX=correlation-matrix.a
 
 EXEC=triple-link-pthread
@@ -14,7 +14,7 @@ CMTX_INCLUDE=correlation-matrix.hpp
 TEMPLATES=edge.t.hpp graph.t.hpp vertex.t.hpp
 
 all:$(EXEC)
-	
+
 
 $(EXEC):$(CMTX) $(OBJECTS)
 	$(CPP) $(CFLAGS) -flto $(OBJECTS) $(LIBS) $(CMTX) -o $(EXEC)

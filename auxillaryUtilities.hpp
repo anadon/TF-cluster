@@ -62,7 +62,7 @@ struct config{
   string geneListFile;
   string expressionFile;
   u8 keepTopN;
-  size_t kickSize;  
+  size_t kickSize;
   f64 threeSigma;
   f64 twoSigma;
   f64 oneSigma;
@@ -70,7 +70,7 @@ struct config{
 
 
 /*******************************************************************//**
- *  Struct to ease parameter passing from addTopEdges() to 
+ *  Struct to ease parameter passing from addTopEdges() to
  * addTopEdgesHelper()
  **********************************************************************/
 struct addTopEdgesHelperStruct{
@@ -100,7 +100,7 @@ struct config loadConfig(const char *configFilePath);
 
 /*******************************************************************//**
  *  Sort edges high to low in a a number of vertexes.
- * 
+ *
  * @param[in,out] toPrune array of vertexes to sort their edges.
  * @param[in] size Number of vertexes in toPrune.
  **********************************************************************/
@@ -109,32 +109,32 @@ void quickMergeEdges(vertex<geneData, f64> *toPrune, csize_t size);
 
 /*******************************************************************//**
  *  Print clusters of (presumably) genes.
- * 
+ *
  * @param[in] clusters Hold name indexes.
  * @param[in] names Hold the names to be printed.
  **********************************************************************/
-void printClusters(queue< queue<size_t> > clusters, 
+void printClusters(queue< queue<size_t> > clusters,
                                           const vector<string> &names);
 
 
 /*******************************************************************//**
- * \deprecated {No longer meaningful for most uses.}  
+ * \deprecated {No longer meaningful for most uses.}
  * Print the edges and the vertexes each is connected to in a graph.
- * 
- * @param[in] corrData Graph containing edges, and vertexes to be 
+ *
+ * @param[in] corrData Graph containing edges, and vertexes to be
  * printed.
  **********************************************************************/
 void printEdges(graph<geneData, f64> *corrData);
 
 
 /*******************************************************************//**
- *  Make a mostly usable graph for triple-link clustering given 
+ *  Make a mostly usable graph for triple-link clustering given
  * triple-link's related constraints.
- * 
- * @param[in,out] protoGraph Holds gene names and an Upper Diagonal 
+ *
+ * @param[in,out] protoGraph Holds gene names and an Upper Diagonal
                              matrix.  During this function, UDMatrix is
                              free'd.
- * @param[in] threeSigma Value which each row much and an edge greater 
+ * @param[in] threeSigma Value which each row much and an edge greater
                          or equal to.
  * @param[in] oneSigma Value which any edge that is less than is not
                        used for triple-link.
@@ -142,15 +142,15 @@ void printEdges(graph<geneData, f64> *corrData);
                           can have.
  **********************************************************************/
 graph<geneData, f64>* constructGraph(
-          const struct UDCorrelationMatrix &protoGraph, cf64 threeSigma, 
+          const struct UDCorrelationMatrix &protoGraph, cf64 threeSigma,
                                         cf64 oneSigma, cu8 maxNumEdges);
 
 
 /*******************************************************************//**
  *  Fail-proof (though slow) way of limiting the number of edges for
- * each vertex does not exceed the maximum value specified in the 
+ * each vertex does not exceed the maximum value specified in the
  * configuration file.
- * 
+ *
  * @param[in,out] corrData Graph which will have it's excess edges
                            removed.
  * @param[in] keepTopN Maximum number of edges a vertex may have, as
@@ -160,26 +160,26 @@ void pruneGraph(graph<geneData, f64> *corrData, cu8 keepTopN);
 
 
 /*******************************************************************//**
- *  Using the quick-merge algorithm, sort an array of pairs by it's 
+ *  Using the quick-merge algorithm, sort an array of pairs by it's
  * first value.  Sorts high to low.
- * 
+ *
  * @param[in,out] toSort Array of pairs to sort, and contains the sorted
                          result.
  * @param[in] size Number of pairs in toSort.
  **********************************************************************/
-void sortDoubleSizeTPairHighToLow(pair<f64, size_t> *toSort, 
+void sortDoubleSizeTPairHighToLow(pair<f64, size_t> *toSort,
                                                           csize_t size);
 
 
 /*******************************************************************//**
- *  Using the quick-merge algorithm, sort an array of pairs by it's 
+ *  Using the quick-merge algorithm, sort an array of pairs by it's
  * first value.  Sorts low to high.
- * 
+ *
  * @param[in,out] toSort Array of pairs to sort, and contains the sorted
                          result.
  * @param[in] size Number of pairs in toSort.
  **********************************************************************/
-void sortDoubleSizeTPairLowToHigh(pair<f64, size_t> *toSort, 
+void sortDoubleSizeTPairLowToHigh(pair<f64, size_t> *toSort,
                                                           csize_t size);
 
 

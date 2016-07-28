@@ -52,8 +52,8 @@ using std::cerr;
   printf("\t");
   for(size_t i = 0; i < protoGraph.matrix.size();i++)
     printf("%s\t", protoGraph.labels[i].c_str());
-  
-  
+
+
   for(size_t i = 0; i < protoGraph.matrix.size(); i++){
     printf("%s\t", protoGraph.labels[i].c_str());
     for(size_t j = 0; j < protoGraph.colSize[j]; j++){
@@ -61,14 +61,14 @@ using std::cerr;
     }
     printf("\n\n");
   }
-  
+
 }
 
 
 bool isProtoGraphValid(const struct correlationMatrix &protoGraph){
   for(size_t i = 0; i < protoGraph.matrix.size(); i++){
     for(size_t j = 0; j < protoGraph.colSize[i]; j++){
-      if(protoGraph.matrix.size() <= protoGraph.matrix[i][j].first) 
+      if(protoGraph.matrix.size() <= protoGraph.matrix[i][j].first)
                                                            return false;
     }
   }
@@ -79,24 +79,24 @@ bool isProtoGraphValid(const struct correlationMatrix &protoGraph){
 
 /*******************************************************************//**
  * print graph to make sense of it's contents to stderr.  The graph is
- * printed with the vertex name on a line, followed by a pair of square 
- * brackets ('[ ' ' ]')  which contain curly bracket pairs which hold 
- * the name of a connected vertex followed by the edge weight.  Each of 
+ * printed with the vertex name on a line, followed by a pair of square
+ * brackets ('[ ' ' ]')  which contain curly bracket pairs which hold
+ * the name of a connected vertex followed by the edge weight.  Each of
  * these entries is followed by a blank line.
- * 
+ *
  * @param[in] toPrint The graph structure to print
  * @param[in] labels
  **********************************************************************/
-void printGraph(graph<geneData, f64> *toPrint, 
+void printGraph(graph<geneData, f64> *toPrint,
                                           const vector<string> &labels){
   for(size_t i = 0; i < toPrint->getNumVertexes(); i++){
-    fprintf(stderr, "%s\n[ ", 
+    fprintf(stderr, "%s\n[ ",
           labels[toPrint->getVertexes()[i]->value.nameIndex].c_str());
-    for(size_t j = 0; j < toPrint->getVertexes()[i]->getNumEdges(); 
+    for(size_t j = 0; j < toPrint->getVertexes()[i]->getNumEdges();
                                                                   j++){
-      fprintf(stderr, "{%s , %lf}\t", 
-labels[toPrint->getVertexes()[i]->getEdges()[j]->other(toPrint->getVertexes()[i])->value.nameIndex].c_str(), 
-                    toPrint->getVertexes()[i]->getEdges()[j]->weight); 
+      fprintf(stderr, "{%s , %lf}\t",
+labels[toPrint->getVertexes()[i]->getEdges()[j]->other(toPrint->getVertexes()[i])->value.nameIndex].c_str(),
+                    toPrint->getVertexes()[i]->getEdges()[j]->weight);
     }
     fprintf(stderr, " ]\n\n"
 "========================================================================"
@@ -110,7 +110,7 @@ labels[toPrint->getVertexes()[i]->getEdges()[j]->other(toPrint->getVertexes()[i]
 
 /*******************************************************************//**
  * Program entry point.
- * 
+ *
  * @param[in] argc number of c-strings in argv
  * @param[in] argv arguments passed to program
  **********************************************************************/
@@ -132,41 +132,41 @@ int main(int argc, char **argv){
     return error;
   }
   cerr << "valid" << endl;
-  
+
   cerr << "Loading correlation matrix..."; fflush(stderr);
   protoGraph = generateUDMatrixFromFile(
                                       settings.expressionFile.c_str());
   convertCoeffToSigmaValue(protoGraph);
   cerr << "done" << endl;
-  
+
   if(settings.keepTopN >= protoGraph.labels.size()){
     cerr << "Too few genes to perform an analysis." << endl;
     return 0;
   }
-  
+
   /*cerr << "Printing correlation matrix...";
   printCorrelationMatrix(protoGraph);
   cerr << "done" << endl;*/
-  
+
   cerr << "Making graph..."; fflush(stderr);
-  corrData = constructGraph(protoGraph, settings.threeSigma, 
+  corrData = constructGraph(protoGraph, settings.threeSigma,
                                   settings.oneSigma, settings.keepTopN);
   cerr << "done" << endl;
-  
+
   cerr << "Pruning graph...";
   cerr << "done" << endl;
-  
+
   //printGraph(corrData, protoGraph.labels);
-  
+
   cerr << "Performing triple link..."; fflush(stderr);
-  result = tripleLink(corrData, settings.threeSigma, 
+  result = tripleLink(corrData, settings.threeSigma,
                             settings.twoSigma);
   cerr << "done!" << endl;
-  
+
   printClusters(result, protoGraph.labels);
-  
+
   protoGraph.labels.clear();
-  
+
   delete corrData;
   //for(size_t i = 0; i < result.size(); i++)
     //result[i].clear();

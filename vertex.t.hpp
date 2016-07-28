@@ -29,14 +29,14 @@
 //FUNCTION DEFINITIONS//////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////
 
-template <typename T, typename U> vertex<T, U>::vertex(size_t index, 
+template <typename T, typename U> vertex<T, U>::vertex(size_t index,
                               T data):  vertexIndex(index), value(data){
   numEdges = edgesSize = 0;
   edges = (edge<T, U>**) NULL;
 }
 
 
-template <typename T, typename U> inline size_t 
+template <typename T, typename U> inline size_t
                                       vertex<T, U>::getNumEdges() const{
   return numEdges;
 }
@@ -62,16 +62,16 @@ template <typename T, typename U> void vertex<T, U>::removeEdge(
   void *memCheck;
   edge<T, U> *tmp;
   size_t targetEdgeIndex = 0;
-  
-  
+
+
   numEdges--;
 
   //check if this is the right or left of the edge, error if edge
   //doesn't connect this node/vertex
-  if(toRemove->leftEdgeIndex <= numEdges 
+  if(toRemove->leftEdgeIndex <= numEdges
                         && toRemove == edges[toRemove->leftEdgeIndex]){
     targetEdgeIndex = toRemove->leftEdgeIndex;
-  }else if(toRemove->rightEdgeIndex <= numEdges 
+  }else if(toRemove->rightEdgeIndex <= numEdges
                         && toRemove == edges[toRemove->rightEdgeIndex]){
     targetEdgeIndex = toRemove->rightEdgeIndex;
   }else{
@@ -108,14 +108,14 @@ template <typename T, typename U> inline bool vertex<T, U>::operator==(
                                       const vertex<T, U> &other) const{
   return (value == other.value);
 }
-  
+
 
 template <typename T, typename U> edge<T, U>** vertex<T, U>::getEdges(){
   return edges;
 }
 
-  
-template <typename T, typename U> const edge<T, U>** 
+
+template <typename T, typename U> const edge<T, U>**
                                         vertex<T, U>::getEdges() const{
   return (const edge<T, U>**) edges;
 }
@@ -124,16 +124,16 @@ template <typename T, typename U> const edge<T, U>**
 template <typename T, typename U> void vertex<T, U>::hintNumEdges(
                                               const size_t suggestSize){
   void *tmpPtr;
-  
+
   if(suggestSize <= numEdges) return;
-  
+
   tmpPtr = realloc(edges, sizeof(*edges) * suggestSize);
   if(NULL == tmpPtr) raise(SIGABRT);
   edges = (edge<geneData, double>**) tmpPtr;
-  
+
   edgesSize = suggestSize;
 }
-  
+
 
 template <typename T, typename U> void vertex<T, U>::shrinkToFit(){
   hintNumEdges(numEdges);

@@ -41,14 +41,14 @@ template <typename T, typename U> class vertex{
   private:
   edge<T, U> **edges;
   size_t numEdges, edgesSize;
-  
+
   public:
   size_t vertexIndex;
   T value;
-  
+
 /*******************************************************************//**
  *  Make a vertex with basic data about itself
- * 
+ *
  * @param[in] index Index the vertex will be located at in graph
  * @param[in] data Data the vertex is meant to represent
  **********************************************************************/
@@ -56,9 +56,9 @@ template <typename T, typename U> class vertex{
 
 
 /*******************************************************************//**
- *  Basic destructor.  All edges must have been removed by graph prior 
+ *  Basic destructor.  All edges must have been removed by graph prior
  * to deletion.
- * 
+ *
  * \pre All edges must have been removed already.
  **********************************************************************/
   ~vertex();
@@ -66,26 +66,26 @@ template <typename T, typename U> class vertex{
 
 /*******************************************************************//**
  *  Register an edge on called vertex.
- * 
- * @param[in,out] toRegister Edge to register and register with by 
+ *
+ * @param[in,out] toRegister Edge to register and register with by
                              returning to it what index it is in the
                              called vertex.
  **********************************************************************/
   size_t addEdge(edge<T, U> *toRegister);
-  
-  
+
+
 /*******************************************************************//**
  *  Get array of stored edges.
  **********************************************************************/
   edge<T, U>** getEdges();
-  
-  
+
+
 /*******************************************************************//**
  *  Get array of stored edges.
  **********************************************************************/
   const edge<T, U>** getEdges() const;
-  
-  
+
+
 /*******************************************************************//**
  *  Get number of stored edges.
  **********************************************************************/
@@ -94,50 +94,50 @@ template <typename T, typename U> class vertex{
 
 /*******************************************************************//**
  *  Given an edge, remove references from it in called vertex
- * 
+ *
  * @param[in,out] toRemove Edge to de-register in called vertex.
  **********************************************************************/
   void removeEdge(edge<T, U> *toRemove);
-  
-  
+
+
 /*******************************************************************//**
  *  Deregister and remove all edges connected to called vertex.
  **********************************************************************/
   void clear();
-  
-  
+
+
 /*******************************************************************//**
  *  Suggest number of edges to be able to store.  Use this to optimize
  * memory management.
- * 
+ *
  * @param[in] suggestSize Suggested number of edges to accomidate.  Can
                           be used to increase or decrease allocated
                           size.
  **********************************************************************/
   void hintNumEdges(const size_t suggestSize);
-  
-  
+
+
 /*******************************************************************//**
  *  Minimize allocated space to fit current number of edges.
  **********************************************************************/
   void shrinkToFit();
-  
-  
+
+
 /*******************************************************************//**
  *  Tell if contents of vertexes are the same, but not nessicarily the
  * same vertex from a single graph.
  **********************************************************************/
   bool operator==(const vertex<T, U> &other) const;
-  
+
   private:
-  
+
 /*******************************************************************//**
  *  Make sure than when adding an edge there is enough space.
- * 
+ *
  * @param[in] size make sure vertex can accomidate at least size edges.
  **********************************************************************/
   void ensureEdgeCapacity(const size_t size);
-  
+
 };
 
 ////////////////////////////////////////////////////////////////////////

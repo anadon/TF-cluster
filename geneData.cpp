@@ -31,7 +31,7 @@ geneData geneData::operator=(geneData const &other){
   twoSigmaLink = other.twoSigmaLink;
   threeSigmaLink = other.threeSigmaLink;
   nameIndex = other.nameIndex;
-  
+
   return *this;
 }
 
