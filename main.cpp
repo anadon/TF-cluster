@@ -1,9 +1,26 @@
+/*******************************************************************//**
+         FILE:  main.cpp
+
+         BUGS:  Correlation values are larger than perl version
+        NOTES:  ---
+       AUTHOR:  Josh Marshall <jrmarsha@mtu.edu>
+      COMPANY:  Michigan technological University
+      VERSION:  See git log
+      CREATED:  See git log
+     REVISION:  See git log
+     LISCENSE:  GPLv3
+***********************************************************************/
 /***********************************************************************
 This is a C++ reimplementation of TF-Cluster.  The goal of this project
 to improve the time and space requirements over the perl implementation.
 
 Input: 1 file name or input from stdin.
 ***********************************************************************/
+
+////////////////////////////////////////////////////////////////////////
+//INCLUDES//////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////
+
 #include <stdio.h>
 #include <vector>
 
@@ -15,11 +32,19 @@ Input: 1 file name or input from stdin.
 #include "graph.t.hpp"
 #include "tripleLink.hpp"
 
+////////////////////////////////////////////////////////////////////////
+//NAMESPACE USING///////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////
 
 using std::cerr;
 
+////////////////////////////////////////////////////////////////////////
+//PRIVATE FUNCTION DEFINITIONS//////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////
 
-/*void printCorrelationMatrix(const struct correlationMatrix &protoGraph){
+
+/*void printCorrelationMatrix(
+                            const struct correlationMatrix &protoGraph){
   //vector< pair<size_t, double>* > matrix;
   //unordered_map<string, size_t> labelLookup;
   //vector<string> labels;
@@ -43,29 +68,52 @@ using std::cerr;
 bool isProtoGraphValid(const struct correlationMatrix &protoGraph){
   for(size_t i = 0; i < protoGraph.matrix.size(); i++){
     for(size_t j = 0; j < protoGraph.colSize[i]; j++){
-      if(protoGraph.matrix.size() <= protoGraph.matrix[i][j].first) return false;
+      if(protoGraph.matrix.size() <= protoGraph.matrix[i][j].first) 
+                                                           return false;
     }
   }
   return true;
 }*/
 
 
-//print graph to make sense of it's contents.
-void printGraph(graph<geneData, f64> *corrData, const vector<string> &labels){
-  for(size_t i = 0; i < corrData->getNumVertexes(); i++){
-    fprintf(stderr, "%s\n[", labels[corrData->getVertexes()[i]->value.nameIndex].c_str());
-    for(size_t j = 0; j < corrData->getVertexes()[i]->getNumEdges(); j++){
+
+/*******************************************************************//**
+ * print graph to make sense of it's contents to stderr.  The graph is
+ * printed with the vertex name on a line, followed by a pair of square 
+ * brackets ('[ ' ' ]')  which contain curly bracket pairs which hold 
+ * the name of a connected vertex followed by the edge weight.  Each of 
+ * these entries is followed by a blank line.
+ * 
+ * @param[in] toPrint The graph structure to print
+ * @param[in] labels
+ **********************************************************************/
+void printGraph(const graph<geneData, f64> *toPrint, 
+                                          const vector<string> &labels){
+  for(size_t i = 0; i < toPrint->getNumVertexes(); i++){
+    fprintf(stderr, "%s\n[ ", 
+          labels[toPrint->getVertexes()[i]->value.nameIndex].c_str());
+    for(size_t j = 0; j < toPrint->getVertexes()[i]->getNumEdges(); 
+                                                                  j++){
       fprintf(stderr, "{%s , %lf}\t", 
-labels[corrData->getVertexes()[i]->getEdges()[j]->other(corrData->getVertexes()[i])->value.nameIndex].c_str(), 
-                        corrData->getVertexes()[i]->getEdges()[j]->weight); 
+labels[toPrint->getVertexes()[i]->getEdges()[j]->other(toPrint->getVertexes()[i])->value.nameIndex].c_str(), 
+                    toPrint->getVertexes()[i]->getEdges()[j]->weight); 
     }
-    fprintf(stderr, "]\n\n"
+    fprintf(stderr, " ]\n\n"
 "========================================================================"
 "\n\n");
   }
 }
 
+////////////////////////////////////////////////////////////////////////
+//PUBLIC FUNCTION DEFINITIONS///////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////
 
+/*******************************************************************//**
+ * Program entry point.
+ * 
+ * @param[in] argc number of c-strings in argv
+ * @param[in] argv arguments passed to program
+ **********************************************************************/
 int main(int argc, char **argv){
   graph<geneData, f64> *corrData;
   struct config settings;
@@ -86,7 +134,8 @@ int main(int argc, char **argv){
   cerr << "valid" << endl;
   
   cerr << "Loading correlation matrix..."; fflush(stderr);
-  protoGraph = generateUDMatrixFromFile(settings.expressionFile.c_str());
+  protoGraph = generateUDMatrixFromFile(
+                                      settings.expressionFile.c_str());
   convertCoeffToSigmaValue(protoGraph);
   cerr << "done" << endl;
   
@@ -100,7 +149,8 @@ int main(int argc, char **argv){
   cerr << "done" << endl;*/
   
   cerr << "Making graph..."; fflush(stderr);
-  corrData = constructGraph(protoGraph, settings.threeSigma, settings.oneSigma, settings.keepTopN);
+  corrData = constructGraph(protoGraph, settings.threeSigma, 
+                                  settings.oneSigma, settings.keepTopN);
   cerr << "done" << endl;
   
   cerr << "Pruning graph...";
@@ -125,3 +175,7 @@ int main(int argc, char **argv){
 
   return 0;
 }
+
+////////////////////////////////////////////////////////////////////////
+//END///////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////

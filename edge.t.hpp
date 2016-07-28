@@ -1,3 +1,19 @@
+/***********************************************************************
+         FILE:  edge.t.hpp
+
+  DESCRIPTION:  Early representation of an edge.
+
+         BUGS:  ---
+        NOTES:  ---
+       AUTHOR:  Josh Marshall <jrmarsha@mtu.edu>
+      COMPANY:  Michigan technological University
+      VERSION:  See git log
+      CREATED:  See git log
+     REVISION:  See git log
+     LISCENSE:  GPLv3
+***********************************************************************/
+#ifndef EDGE_T_HPP
+#define EDGE_T_HPP
 #include "edge.hpp"
 #include "vertex.hpp"
 
@@ -25,3 +41,5 @@ template <typename T, typename U> vertex<T, U>* edge<T, U>::other(const vertex<T
   else                    raise(SIGABRT);  
   return ( vertex<T, U>* ) NULL;
 }
+
+#endif

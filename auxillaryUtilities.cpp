@@ -1,7 +1,20 @@
-/*TODO liscense/programmer here*/
+/*******************************************************************//**
+         FILE:  auxillaryUtilities.cpp
+
+  DESCRIPTION:  Miscelaneous functions used in TF-cluser
+
+         BUGS:  Correlation values are larger than perl version
+        NOTES:  ---
+       AUTHOR:  Josh Marshall <jrmarsha@mtu.edu>
+      COMPANY:  Michigan technological University
+      VERSION:  See git log
+      CREATED:  See git log
+     REVISION:  See git log
+     LISCENSE:  GPLv3
+***********************************************************************/
 
 ////////////////////////////////////////////////////////////////////////
-//INCLUDES
+//INCLUDES//////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////
 
 #include <fstream>
@@ -10,7 +23,6 @@
 #include <cmath>
 #include <queue>
 #include <string>
-//#include <thread>
 #include <utility>
 
 
@@ -19,9 +31,8 @@
 #include "edge.t.hpp"
 #include "vertex.t.hpp"
 
-
 ////////////////////////////////////////////////////////////////////////
-//USING IN NAMESPACE STD
+//NAMESPACE USING///////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////
 
 using std::cerr;
@@ -33,7 +44,6 @@ using std::ofstream;
 using std::pair;
 using std::queue;
 using std::string;
-//using std::thread;
 using std::vector;
 using std::make_pair;
 
@@ -48,24 +58,40 @@ struct quickMergeDoubleSizeTPair_recurse_struct{
   size_t size;
 };
 
-
 ////////////////////////////////////////////////////////////////////////
-//PRIVATE FUNCTION DECLARATIONS
+//PRIVATE FUNCTION DECLARATIONS/////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////
 
+/*******************************************************************//**
+ *  A helper function to addTopEdges() suitable for multithreading.
+ **********************************************************************/
 void *addTopEdgesHelper(void *protoArgs);
 
+
+/*******************************************************************//**
+ *  A helper function to quickMergeEdges().
+ **********************************************************************/
+void mergeHelper(edge<geneData, f64> **toSort, csize_t leftIndex,
+                                  csize_t rightIndex, csize_t endIndex);
+
+
+/*******************************************************************//**
+ *  A helper function to sortDoubleSizeTPairLowToHigh().
+ **********************************************************************/
 void sortDoubleSizeTPairLowToHighHelper(pair<f64, size_t> *toSort, 
                 csize_t leftIndex, csize_t rightIndex, csize_t endIndex, 
                                           pair<f64, size_t> *sortSpace);
 
+
+/*******************************************************************//**
+ *  A helper function to sortDoubleSizeTPairHighToLow().
+ **********************************************************************/
 void sortDoubleSizeTPairHighToLowHelper(pair<f64, size_t> *toSort, 
                 csize_t leftIndex, csize_t rightIndex, csize_t endIndex, 
                                           pair<f64, size_t> *sortSpace);
 
-
 ////////////////////////////////////////////////////////////////////////
-//FUNCTION DEFINITIONS
+//FUNCTION DEFINITIONS//////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////
 
 //TODO: this can be made more complete
@@ -127,7 +153,8 @@ void quickMergeEdges(vertex<geneData, f64> *toPrune, csize_t size){
 
   i=0;
   for(i = 0; i < size-1; i++){
-    if(toPrune->getEdges()[i]->weight < toPrune->getEdges()[i+1]->weight)
+    if(toPrune->getEdges()[i]->weight < 
+                                      toPrune->getEdges()[i+1]->weight)
       indiciesOfInterest.push_back(i+1);
   }
   indiciesOfInterest.push_back(size);
@@ -147,11 +174,13 @@ void quickMergeEdges(vertex<geneData, f64> *toPrune, csize_t size){
 
 
 void mergeHelper(edge<geneData, f64> **toSort, csize_t leftIndex,
-                        csize_t rightIndex, csize_t endIndex){
+                                  csize_t rightIndex, csize_t endIndex){
   size_t leftParser, rightParser, mergedParser;
   edge<geneData, f64> **sortSpace;
+  void *tmpPtr;
 
-  sortSpace = (edge<geneData, f64>**) malloc(sizeof(*sortSpace) * (endIndex - leftIndex));
+  tmpPtr = malloc(sizeof(*sortSpace) * (endIndex - leftIndex));
+  sortSpace = (edge<geneData, f64>**) tmpPtr;
 
   leftParser = leftIndex;
   rightParser = rightIndex;
@@ -161,7 +190,8 @@ void mergeHelper(edge<geneData, f64> **toSort, csize_t leftIndex,
         toSort[leftParser] > toSort[rightParser] ?
         toSort[leftParser++] : toSort[rightParser++];
 
-  memcpy(&toSort[leftIndex], sortSpace, sizeof(*toSort) * (endIndex - leftIndex));
+  memcpy(&toSort[leftIndex], sortSpace, 
+                              sizeof(*toSort) * (endIndex - leftIndex));
   
   free(sortSpace);
 }
@@ -184,7 +214,8 @@ struct config loadConfig(const char *configFilePath){
   configFile.open(configFilePath);
   
   if(!configFile.is_open()){
-    cerr << "ERROR: cannot open required file \"SCCM_pipe.cfg\"" << endl;
+    cerr << "ERROR: cannot open required file \"SCCM_pipe.cfg\"" 
+         << endl;
     exit(1);
   }
   
@@ -264,13 +295,15 @@ struct config loadConfig(const char *configFilePath){
   configFile.close();
   
   if(settings.geneListFile != ""){
-    cerr << "geneList is in \"" << settings.geneListFile << "\"" << endl;
+    cerr << "geneList is in \"" << settings.geneListFile << "\"" 
+         << endl;
   }else{
     cerr << "ERROR: geneList file not set" << endl;
     errorInFile = true;
   }
   if(settings.expressionFile != ""){
-    cerr << "expression is in \"" << settings.expressionFile << "\"" << endl;
+    cerr << "expression is in \"" << settings.expressionFile << "\"" 
+         << endl;
   }else{
     cerr << "ERROR: expression file not set" << endl;
     errorInFile = true;
@@ -312,7 +345,8 @@ struct config loadConfig(const char *configFilePath){
 }
 
 
-void printClusters(queue< queue<size_t> > clusters, const vector<string> &names){
+void printClusters(queue< queue<size_t> > clusters, 
+                                          const vector<string> &names){
   for(size_t i = 0; !clusters.empty(); i++){
     cout << "cluster: " << (i+1) << endl;
     while(!clusters.front().empty()){
@@ -324,8 +358,9 @@ void printClusters(queue< queue<size_t> > clusters, const vector<string> &names)
 }
 
 
-graph<geneData, f64>* constructGraph(const struct UDCorrelationMatrix &protoGraph, 
-                                      cf64 threeSigma, cf64 oneSigma, cu8 maxNumEdges){
+graph<geneData, f64>* constructGraph(
+          const struct UDCorrelationMatrix &protoGraph, cf64 threeSigma, 
+                                        cf64 oneSigma, cu8 maxNumEdges){
   graph<geneData, f64>* tr;
   size_t intermediateGraphItr;
   void *tmpPtr;
@@ -447,8 +482,12 @@ graph<geneData, f64>* constructGraph(const struct UDCorrelationMatrix &protoGrap
 
 void pruneGraph(graph<geneData, f64> *corrData, u8 keepTopN){
   edge<geneData, f64> **workSpace, **sortSpace;
-  workSpace = (edge<geneData, f64>**) malloc(sizeof(*workSpace) * corrData->getNumEdges());
-  sortSpace = (edge<geneData, f64>**) malloc(sizeof(*sortSpace) * corrData->getNumEdges());
+  void *tmpPtr;
+  
+  tmpPtr = malloc(sizeof(*workSpace) * corrData->getNumEdges());
+  workSpace = (edge<geneData, f64>**) tmpPtr;
+  tmpPtr = malloc(sizeof(*sortSpace) * corrData->getNumEdges());
+  sortSpace = (edge<geneData, f64>**) tmpPtr;
   
   for(size_t i = 0; i < corrData->getNumVertexes(); i++){
     queue<size_t> indiciesOfInterest;
@@ -489,8 +528,10 @@ void pruneGraph(graph<geneData, f64> *corrData, u8 keepTopN){
     while(indiciesOfInterest.size() > 2){
       while(indiciesOfInterest.size() > 2){
         size_t leftPtr, rightPtr, itr;
-        csize_t leftStart = indiciesOfInterest.front(); indiciesOfInterest.pop();
-        csize_t leftEnd = indiciesOfInterest.front();  indiciesOfInterest.pop();
+        csize_t leftStart = indiciesOfInterest.front(); 
+                                              indiciesOfInterest.pop();
+        csize_t leftEnd = indiciesOfInterest.front();  
+                                              indiciesOfInterest.pop();
         csize_t rightEnd = indiciesOfInterest.front();
         itr = 0;
         leftPtr = leftStart;
@@ -504,8 +545,10 @@ void pruneGraph(graph<geneData, f64> *corrData, u8 keepTopN){
           else
             sortSpace[itr++] = workSpace[rightPtr++];
         }
-        while(leftPtr < leftEnd)   sortSpace[itr++] = workSpace[leftPtr++];
-        while(rightPtr < rightEnd) sortSpace[itr++] = workSpace[rightPtr++];
+        while(leftPtr < leftEnd)   
+                                sortSpace[itr++] = workSpace[leftPtr++];
+        while(rightPtr < rightEnd) 
+                              sortSpace[itr++] = workSpace[rightPtr++];
         
         memcpy(&workSpace[leftStart], sortSpace, copySize);
       }
@@ -531,7 +574,8 @@ void pruneGraph(graph<geneData, f64> *corrData, u8 keepTopN){
 
 
 //quickMerge
-void sortDoubleSizeTPairHighToLow(pair<f64, size_t> *toSort, csize_t size){
+void sortDoubleSizeTPairHighToLow(pair<f64, size_t> *toSort, 
+                                                          csize_t size){
   size_t numRising;
   size_t i;
   void *tmpPtr;
@@ -583,7 +627,8 @@ void sortDoubleSizeTPairHighToLow(pair<f64, size_t> *toSort, csize_t size){
       newIndiciesOfInterest[NIOISize++] = indiciesOfInterest[IOISize-2];
     }
     newIndiciesOfInterest[NIOISize++] = size;
-    memcpy(indiciesOfInterest, newIndiciesOfInterest, NIOISize * sizeof(*indiciesOfInterest));
+    memcpy(indiciesOfInterest, newIndiciesOfInterest, 
+                                NIOISize * sizeof(*indiciesOfInterest));
     IOISize = NIOISize;
   }
   
@@ -611,11 +656,13 @@ void sortDoubleSizeTPairHighToLowHelper(pair<f64, size_t> *toSort,
     sortSpace[mergedParser++] = toSort[leftParser++];
   while(rightParser < endIndex)
     sortSpace[mergedParser++] = toSort[rightParser++];
-  memcpy(&toSort[leftIndex], sortSpace, sizeof(*toSort) * (endIndex - leftIndex));
+  memcpy(&toSort[leftIndex], sortSpace, 
+                              sizeof(*toSort) * (endIndex - leftIndex));
 }
 
 
-void sortDoubleSizeTPairLowToHigh(pair<f64, size_t> *toSort, csize_t size){
+void sortDoubleSizeTPairLowToHigh(pair<f64, size_t> *toSort, 
+                                                          csize_t size){
   size_t numFalling;
   size_t i;
   void *tmpPtr;
@@ -667,7 +714,8 @@ void sortDoubleSizeTPairLowToHigh(pair<f64, size_t> *toSort, csize_t size){
       newIndiciesOfInterest[NIOISize++] = indiciesOfInterest[IOISize-2];
     }
     newIndiciesOfInterest[NIOISize++] = size;
-    memcpy(indiciesOfInterest, newIndiciesOfInterest, NIOISize * sizeof(*indiciesOfInterest));
+    memcpy(indiciesOfInterest, newIndiciesOfInterest, 
+                                NIOISize * sizeof(*indiciesOfInterest));
     IOISize = NIOISize;
   }
   
@@ -695,5 +743,10 @@ void sortDoubleSizeTPairLowToHighHelper(pair<f64, size_t> *toSort,
     sortSpace[mergedParser++] = toSort[leftParser++];
   while(rightParser < endIndex)
     sortSpace[mergedParser++] = toSort[rightParser++];
-  memcpy(&toSort[leftIndex], sortSpace, sizeof(*toSort) * (endIndex - leftIndex));
+  memcpy(&toSort[leftIndex], sortSpace, 
+                              sizeof(*toSort) * (endIndex - leftIndex));
 }
+
+////////////////////////////////////////////////////////////////////////
+//END///////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////

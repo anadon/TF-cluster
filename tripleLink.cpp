@@ -1,64 +1,125 @@
-#ifndef TRIPLELINK_HPP
-#define TRIPLELINK_HPP
+/*******************************************************************//**
+         FILE:  tripleLink.cpp
+
+  DESCRIPTION:  Implementation of tripleLink clustering
+
+         BUGS:  ---
+        NOTES:  ---
+       AUTHOR:  Josh Marshall <jrmarsha@mtu.edu>
+      COMPANY:  Michigan technological University
+      VERSION:  See git log
+      CREATED:  See git log
+     REVISION:  See git log
+     LISCENSE:  GPLv3
+***********************************************************************/
+
+////////////////////////////////////////////////////////////////////////
+//INCLUDES//////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////
 
 #include <queue>
 #include <vector>
 
 #include "auxillaryUtilities.hpp"
-#include "edge.t.hpp"
-#include "vertex.t.hpp"
 #include "graph.t.hpp"
+
+////////////////////////////////////////////////////////////////////////
+//NAMESPACE USING///////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////
 
 using std::queue;
 using std::vector;
 
+////////////////////////////////////////////////////////////////////////
+//PRIVATE FUNCTION DECLARATIONS/////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////
 
-/*
-Return true if edge can be safely removed
-*/
-bool markConnectedVertexPrimer(cf64 edgeWeight, vertex<geneData, double> *toMark, 
-                      cf64 high, cf64 med, queue<geneData> &toProcess){
-  geneData *value = &toMark->value;
-  
-  if(value->threeSigmaLink & value->twoSigmaLink)
-    return true;
-  
-  if(!value->threeSigmaLink && edgeWeight >= high)    value->threeSigmaLink = true;
-  else if(!value->twoSigmaLink && edgeWeight >= med)  value->twoSigmaLink   = true;
-  
-  if(value->threeSigmaLink & value->twoSigmaLink){
-    toProcess.push(toMark->value.nameIndex);
-    return true;
-  }else{
-    return false;
-  }
-}
+/*******************************************************************//**
+ *  Expand a cluster using the triple-link heuristic, and return a
+ * queue of name indexes found, while removing those vertexes the 
+ * indexes came from from the graph.
+ * 
+ * @param[in,out] geneNetwork Graph of interconnected genes
+ * @param[in] threeSigma High connection value for edges.
+ * @param[in] twoSigma Medium connection value for edges.
+ **********************************************************************/
+queue<size_t> tripleLinkIteration(graph<geneData, double> *geneNetwork,
+                                        cf64 threeSigma, cf64 twoSigma);
 
 
-void markConnectedVertexesPrimer(vertex<geneData, double> *markFrom, cf64 high, 
+/*******************************************************************//**
+ *  Mark vertex as reached as appropriate and return true if edge can be
+ * safely removed.
+ * 
+ * @param[in] edgeWeight The weight of the edge connecting the outgoing 
+ *                       vertex.
+ * @param[in,out] toMark The outgoing vertex to mark.
+ * @param[in] high High value edge weight cutoff.
+ * @param[in] med medium value edge weight cutoff.
+ * @param[out] toProcess Processing queue should toMark becomes well
+ *                       connected.
+ **********************************************************************/
+bool markConnectedVertex(cf64 edgeWeight, 
+                  vertex<geneData, double> *toMark, cf64 high, cf64 med, 
+                                            queue<geneData> &toProcess);
+
+
+/*******************************************************************//**
+ *  Appropriately mark all vertexes connected to markFrom, and add ones
+ * who are well connected to the current process queue.  Also remove
+ * traversed edges on markFrom, as they are only needed once.
+ * 
+ * @param[in,out] markFrom Vertex to mark all connecting vertexes from.
+ * @param[in] high High value edge weight cutoff.
+ * @param[in] med Medium value edge weight cutoff.
+ * @param[in,out] geneNetwork Network of connected genes which markFrom
+ *                            needs to operate through and be 
+ *                            subsequently removed.
+ * @param[in,out] toProcess Record of vertexes which need to be 
+ *                          processed in this iteration of triple-link.
+ **********************************************************************/
+void markConnectedVertexes(vertex<geneData, double> *markFrom, cf64 high, 
                         cf64 med, graph<geneData, double> *geneNetwork, 
+                                            queue<geneData> &toProcess);
+
+
+/*******************************************************************//**
+ *  Reset connection markers on verticex.
+ * 
+ * @param[out] toReset Remove connection marks from passed vertex.
+ **********************************************************************/
+inline void untouchVertex(vertex<geneData, double> *toReset);
+
+
+/*******************************************************************//**
+ *  Remove verticies which are apparent that they can no longer be 
+ * included in any future cluster.
+ * 
+ * @param[in,out] geneNetwork Graph to search through and prune.
+ * @param[in] high High value edge weight cutoff.
+ * @param[in] med medium value edge weight cutoff.
+ **********************************************************************/
+void removeWeakVerticies(graph<geneData, f64> *geneNetwork, cf64 high, 
+                                                              cf64 med);
+
+////////////////////////////////////////////////////////////////////////
+//FUNCTION DEFINITIONS//////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////
+
+bool markConnectedVertex(cf64 edgeWeight, 
+                  vertex<geneData, double> *toMark, cf64 high, cf64 med, 
                                             queue<geneData> &toProcess){
-  for(size_t i = 0; i < markFrom->getNumEdges(); i++)
-    if(markConnectedVertexPrimer(markFrom->getEdges()[i]->weight,
-                    markFrom->getEdges()[i]->other(markFrom), high, med, 
-                                                            toProcess))
-      geneNetwork->removeEdge(markFrom->getEdges()[i]);
-}
-
-
-/*
-Return true if edge can be safely removed
-*/
-bool markConnectedVertex(cf64 edgeWeight, vertex<geneData, double> *toMark, 
-                      cf64 high, cf64 med, queue<geneData> &toProcess){
   geneData *value = &toMark->value;
   
   if(value->threeSigmaLink & value->twoSigmaLink & value->oneSigmaLink)
     return true;
   
-  if(!value->threeSigmaLink && edgeWeight >= high){    value->threeSigmaLink = true; }
-  else if(!value->twoSigmaLink && edgeWeight >= med){  value->twoSigmaLink   = true; }
-  else if(!value->oneSigmaLink){                       value->oneSigmaLink   = true; }
+  if(!value->threeSigmaLink && edgeWeight >= high){    
+                                        value->threeSigmaLink = true; }
+  else if(!value->twoSigmaLink && edgeWeight >= med){  
+                                        value->twoSigmaLink   = true; }
+  else if(!value->oneSigmaLink){                       
+                                        value->oneSigmaLink   = true; }
   
   if(value->threeSigmaLink & value->twoSigmaLink & value->oneSigmaLink){
     toProcess.push(toMark->value.nameIndex);
@@ -69,12 +130,13 @@ bool markConnectedVertex(cf64 edgeWeight, vertex<geneData, double> *toMark,
 }
 
 
-void markConnectedVertexes(vertex<geneData, double> *markFrom, cf64 high, 
-                        cf64 med, graph<geneData, double> *geneNetwork, 
+void markConnectedVertexes(vertex<geneData, double> *markFrom, 
+              cf64 high, cf64 med, graph<geneData, double> *geneNetwork, 
                                             queue<geneData> &toProcess){
   for(size_t i = 0; i < markFrom->getNumEdges(); i++)
     if(markConnectedVertex(markFrom->getEdges()[i]->weight,
-            markFrom->getEdges()[i]->other(markFrom), high, med, toProcess))
+            markFrom->getEdges()[i]->other(markFrom), high, med, 
+                                                            toProcess))
       geneNetwork->removeEdge(markFrom->getEdges()[i]);
 }
 
@@ -96,7 +158,8 @@ void removeWeakVerticies(graph<geneData, f64> *geneNetwork, cf64 high,
   do{
     disconnectedVerticiesFound = false;
     for(size_t i = 0; i < geneNetwork->getNumVertexes(); i++){
-      const vertex<geneData, f64> *target = geneNetwork->getVertexes()[i];
+      const vertex<geneData, f64> *target = 
+                                          geneNetwork->getVertexes()[i];
       if(2 > target->getNumEdges()){
         geneNetwork->removeVertex(target);
         disconnectedVerticiesFound = true;
@@ -105,7 +168,8 @@ void removeWeakVerticies(graph<geneData, f64> *geneNetwork, cf64 high,
       
       bool highFound, medFound;
       highFound = medFound = false;
-      for(size_t j = 0; j < target->getNumEdges() && (!highFound || !medFound); j++){
+      for(size_t j = 0; j < target->getNumEdges() 
+                                    && (!highFound || !medFound); j++){
         if(target->getEdges()[j]->weight >= high && !highFound)
           highFound = true;
         else if(target->getEdges()[j]->weight >= med)
@@ -122,10 +186,11 @@ void removeWeakVerticies(graph<geneData, f64> *geneNetwork, cf64 high,
 
 
 queue<size_t> tripleLinkIteration(graph<geneData, double> *geneNetwork,
-                                                  cf64 high, cf64 med){
+                                        cf64 threeSigma, cf64 twoSigma){
   queue<size_t> toReturn;
   edge<geneData, double> *initialEdge;
-  vertex<geneData, double> *firstVertex, *secondVertex, *connectedVertex;
+  vertex<geneData, double> *firstVertex, *secondVertex;
+  vertex<geneData, double> *connectedVertex;
   queue<geneData> toProcess;
   size_t targetEdgeIndex = 0;
   double maxFoundValue = geneNetwork->getEdges()[0]->weight;
@@ -153,10 +218,12 @@ queue<size_t> tripleLinkIteration(graph<geneData, double> *geneNetwork,
   toReturn.push(secondVertex->value.nameIndex);
 
   //Primer connections for triple link
-  markConnectedVertexesPrimer(firstVertex, high, med, geneNetwork, toProcess);
+  markConnectedVertexesPrimer(firstVertex, high, med, geneNetwork, 
+                                                            toProcess);
   geneNetwork->removeVertex(firstVertex);
   
-  markConnectedVertexesPrimer(secondVertex, high, med, geneNetwork, toProcess);
+  markConnectedVertexesPrimer(secondVertex, high, med, geneNetwork, 
+                                                            toProcess);
   geneNetwork->removeVertex(secondVertex);
 
   //Main tiple link tree expantion loop
@@ -170,7 +237,8 @@ queue<size_t> tripleLinkIteration(graph<geneData, double> *geneNetwork,
     
     toReturn.push(connectedVertex->value.nameIndex);
 
-    markConnectedVertexes(connectedVertex, high, med, geneNetwork, toProcess);
+    markConnectedVertexes(connectedVertex, high, med, geneNetwork, 
+                                                            toProcess);
     geneNetwork->removeVertex(connectedVertex);
   }
 
@@ -179,18 +247,24 @@ queue<size_t> tripleLinkIteration(graph<geneData, double> *geneNetwork,
 
 
 queue< queue<size_t> > tripleLink(graph<geneData, double> *geneNetwork,
-                                                  cf64 high, cf64 med){
+                                        cf64 threeSigma, cf64 twoSigma){
   queue< queue<size_t> > toReturn;
 
   //remove verticies which lack connection strength for inclusion
-  removeWeakVerticies(geneNetwork, high, med);
+  removeWeakVerticies(geneNetwork, threeSigma, twoSigma);
 
-  while(geneNetwork->getNumVertexes() > 0 && geneNetwork->getNumEdges() > 0){
-    toReturn.push(tripleLinkIteration(geneNetwork, high, med));
-    removeWeakVerticies(geneNetwork, high, med);
+  while(geneNetwork->getNumVertexes() > 0 
+                                    && geneNetwork->getNumEdges() > 0){
+    toReturn.push(tripleLinkIteration(geneNetwork, threeSigma, 
+                                                            twoSigma));
+    removeWeakVerticies(geneNetwork, threeSigma, twoSigma);
   }
 
   return toReturn;
 }
+
+////////////////////////////////////////////////////////////////////////
+//END///////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////
 
 #endif

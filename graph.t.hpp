@@ -1,3 +1,24 @@
+/*******************************************************************//**
+         FILE:  graph.t.hpp
+
+  DESCRIPTION:  Public interface for a somewhats STL quality graph
+
+         BUGS:  ---
+        NOTES:  ---
+       AUTHOR:  Josh Marshall <jrmarsha@mtu.edu>
+      COMPANY:  Michigan technological University
+      VERSION:  See git log
+      CREATED:  See git log
+     REVISION:  See git log
+     LISCENSE:  GPLv3
+***********************************************************************/
+#ifndef STD_GRAPH_T_HPP
+#define STD_GRAPH_T_HPP
+
+////////////////////////////////////////////////////////////////////////
+//INCLUDES//////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////
+
 #include <csignal>
 #include <iostream>
 #include <stdlib.h>
@@ -6,10 +27,17 @@
 #include "geneData.hpp"
 #include "graph.hpp"
 
+////////////////////////////////////////////////////////////////////////
+//NAMESPACE USING///////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////
+
 using std::unordered_map;
 using std::cout;
 using std::endl;
 
+////////////////////////////////////////////////////////////////////////
+//FUNCTION DEFINITIONS//////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////
 
 template <typename T, typename U> graph<T, U>::graph(){
   numVertexes = numEdges = vertexArraySize = edgeArraySize = 0;
@@ -21,20 +49,15 @@ template <typename T, typename U> graph<T, U>::graph(){
 template <typename T, typename U> graph<T, U>::~graph(){
   
   while(numEdges)  removeEdge(edgeArray[numEdges-1]);
-  //free(edgeArray);
   
   while(numVertexes) removeVertex(vertexArray[numVertexes-1]);
-  //free(vertexArray);
-  
-  //for(size_t i = 0; i < numEdges; i++)
-  //   delete edgeArray[i];
-  //free(edgeArray);
   
   geneNameToNodeID.clear();
 }
 
 
-template <typename T, typename U> U graph<T, U>::removeEdge(edge<T, U> *toRemove){
+template <typename T, typename U> U graph<T, U>::removeEdge(
+                                                  edge<T, U> *toRemove){
   const size_t edgeIndex = toRemove->edgeID;
   void *memCheck;
   U tr;
@@ -56,7 +79,8 @@ template <typename T, typename U> U graph<T, U>::removeEdge(edge<T, U> *toRemove
 
 
 //TODO: update vertex address in hash
-template <typename T, typename U> T graph<T, U>::removeVertex(const vertex<T, U> *toRemove){
+template <typename T, typename U> T graph<T, U>::removeVertex(
+                                          const vertex<T, U> *toRemove){
   const size_t nodeIndex = toRemove->vertexIndex;
   vertex<T, U> *target = vertexArray[nodeIndex];
   void *memCheck;
@@ -92,7 +116,8 @@ template <typename T, typename U> T graph<T, U>::removeVertex(const vertex<T, U>
 }*/
 
 
-template <typename T, typename U> vertex<T, U>* graph<T, U>::addVertex(T data){
+template <typename T, typename U> vertex<T, U>* graph<T, U>::addVertex(
+                                                                T data){
   vertex<T, U> *tr;
   
   tr = getVertexForValue(data);
@@ -117,7 +142,8 @@ template <typename T, typename U> edge<T, U>* graph<T, U>::addEdge(
   
   ensureEdgeCapacity(numEdges + 1);
   
-  edgeArray[numEdges] = new edge<T, U>(left, right, newWeight, numEdges);
+  edgeArray[numEdges] = new edge<T, U>(left, right, newWeight, 
+                                                              numEdges);
   
   numEdges++;
   return edgeArray[numEdges-1];
@@ -138,7 +164,8 @@ template <typename T, typename U> edge<T, U>** graph<T, U>::getEdges(){
 }
 
 
-template <typename T, typename U>const edge<T, U>** graph<T, U>::getEdges() const{
+template <typename T, typename U>const edge<T, U>** 
+                                          graph<T, U>::getEdges() const{
   return (const edge<T, U>**) edgeArray;
 }
 
@@ -148,22 +175,26 @@ template <typename T, typename U> size_t graph<T, U>::getNumEdges() const{
 }
 
 
-template <typename T, typename U> vertex<T, U>** graph<T, U>::getVertexes(){
+template <typename T, typename U> vertex<T, U>** 
+                                            graph<T, U>::getVertexes(){
   return (vertex<T, U>**) vertexArray;
 }
 
 
-template <typename T, typename U> size_t graph<T, U>::getNumVertexes() const{
+template <typename T, typename U> size_t graph<T, U>::getNumVertexes() 
+                                                                  const{
   return numVertexes;
 }
 
 
-template <typename T, typename U> vertex<T, U>* graph<T, U>::addVertex(vertex<T, U> *newVertex){
+template <typename T, typename U> vertex<T, U>* 
+                        graph<T, U>::addVertex(vertex<T, U> *newVertex){
   return addVertex(newVertex->value);
 }
 
 
-template <typename T, typename U> graph<T, U>& graph<T, U>::operator=(const graph<T, U> &other){
+template <typename T, typename U> graph<T, U>& graph<T, U>::operator=(
+                                              const graph<T, U> &other){
 
   raise(SIGABRT);
 
@@ -179,14 +210,16 @@ template <typename T, typename U> graph<T, U>& graph<T, U>::operator=(const grap
 }
 
 
-template <typename T, typename U> vertex<T, U>* graph<T, U>::getVertexForValue(const T &testValue){
+template <typename T, typename U> vertex<T, U>* 
+                    graph<T, U>::getVertexForValue(const T &testValue){
   if(geneNameToNodeID.count(testValue)) 
     return vertexArray[geneNameToNodeID[testValue]];
   return NULL;
 }
 
 
-template <typename T, typename U> void graph<T, U>::hintNumEdges(const size_t suggestSize){
+template <typename T, typename U> void graph<T, U>::hintNumEdges(
+                                                  csize_t suggestSize){
   void *memCheck;
   
   if(suggestSize <= numEdges) return;
@@ -204,7 +237,8 @@ template <typename T, typename U> void graph<T, U>::hintNumEdges(const size_t su
 }
 
 
-template <typename T, typename U> void graph<T, U>::hintNumVertexes(const size_t suggestSize){
+template <typename T, typename U> void graph<T, U>::hintNumVertexes(
+                                                  csize_t suggestSize){
   void *memCheck;
   
   if(suggestSize <= numVertexes) return;
@@ -223,17 +257,26 @@ template <typename T, typename U> void graph<T, U>::hintNumVertexes(const size_t
 }
 
 
-template <typename T, typename U> void graph<T, U>::shrinkEdgeCapacityToFit(){
+template <typename T, typename U> void 
+                                graph<T, U>::shrinkEdgeCapacityToFit(){
   hintNumEdges(numEdges);
 }
   
   
-template <typename T, typename U> void graph<T, U>::shrinkVertexCapacityToFit(){
+template <typename T, typename U> void 
+                              graph<T, U>::shrinkVertexCapacityToFit(){
   hintNumVertexes(numVertexes);
+}
+  
+  
+template <typename T, typename U> void graph<T, U>::shrinkToFit(){
+  shrinkEdgeCapacityToFit();
+  shrinkVertexCapacityToFit();
 }
 
 
-template <typename T, typename U> void graph<T, U>::ensureEdgeCapacity(const size_t size){
+template <typename T, typename U> void graph<T, U>::ensureEdgeCapacity(
+                                                          csize_t size){
   void *memCheck;
   size_t nextSize;
   
@@ -251,7 +294,8 @@ template <typename T, typename U> void graph<T, U>::ensureEdgeCapacity(const siz
 }
   
   
-template <typename T, typename U> void graph<T, U>::ensureVertexCapacity(const size_t size){
+template <typename T, typename U> void 
+                  graph<T, U>::ensureVertexCapacity(const size_t size){
   void *memCheck;
   size_t nextSize;
   if(size <= vertexArraySize) return;
@@ -264,5 +308,10 @@ template <typename T, typename U> void graph<T, U>::ensureVertexCapacity(const s
   }
   vertexArray = (vertex<T, U>**) memCheck;
   vertexArraySize = nextSize;
-  
 }
+
+////////////////////////////////////////////////////////////////////////
+//END///////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////
+
+#endif
