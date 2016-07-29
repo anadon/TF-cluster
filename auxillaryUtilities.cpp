@@ -23,6 +23,7 @@
 #include <cmath>
 #include <queue>
 #include <string>
+#include <thread>
 #include <utility>
 
 
@@ -44,6 +45,7 @@ using std::ofstream;
 using std::pair;
 using std::queue;
 using std::string;
+using std::thread;
 using std::vector;
 using std::make_pair;
 
@@ -56,6 +58,19 @@ struct quickMergeDoubleSizeTPair_recurse_struct{
   pair<f64, size_t> *toSort;
   pair<f64, size_t> *workSpace;
   size_t size;
+};
+
+
+struct constructGraphHelperStruct{
+  size_t startIndex;
+  size_t endIndex;
+  size_t rowSize;
+  f64 *UDMatrix;
+  f64 threeSigma;
+  f64 oneSigma;
+  size_t *columnSize;
+  pair<f64, size_t> **intermediateGraph;
+  u8 maxNumEdges;
 };
 
 ////////////////////////////////////////////////////////////////////////
@@ -89,6 +104,12 @@ void sortDoubleSizeTPairLowToHighHelper(pair<f64, size_t> *toSort,
 void sortDoubleSizeTPairHighToLowHelper(pair<f64, size_t> *toSort,
                 csize_t leftIndex, csize_t rightIndex, csize_t endIndex,
                                           pair<f64, size_t> *sortSpace);
+
+
+/*******************************************************************//**
+ *  A helper function to constructGraph() for edge selection.
+ **********************************************************************/
+void *constructGraph(void *arg);
 
 ////////////////////////////////////////////////////////////////////////
 //FUNCTION DEFINITIONS//////////////////////////////////////////////////
@@ -321,6 +342,71 @@ void printClusters(queue< queue<size_t> > clusters,
 }
 
 
+void *constructGraphHelper(void *arg){
+  struct constructGraphHelperStruct *args = 
+                              (struct constructGraphHelperStruct*) arg;
+  csize_t startIndex = args->startIndex;
+  csize_t endIndex = args->endIndex;
+  csize_t omega = args->rowSize;
+  cf64 *UDMatrix = args->UDMatrix;
+  cf64 threeSigma = args->threeSigma;
+  cf64 oneSigma = args->oneSigma;
+  size_t *columnSize = args->columnSize;
+  pair<f64, size_t> **intermediateGraph = args->intermediateGraph;
+  cu8 maxNumEdges = args->maxNumEdges;
+  
+  void *tmpPtr;
+  
+  for(size_t i = startIndex; i < endIndex; i++){
+    size_t itr = 0;
+    size_t baseOffset;
+    pair<f64, size_t> *toSort;
+    size_t shrinkSize;
+    
+    tmpPtr = malloc(sizeof(*toSort) * (omega-1));
+    toSort = (pair<f64, size_t>*) tmpPtr;
+
+    for(size_t j = 0; j < i; j++){
+      baseOffset = (omega*(omega-1)/2) - (omega-j)*((omega-j)-1)/2 - j - 1;
+      if(oneSigma <= UDMatrix[baseOffset + i])
+        toSort[itr++] = pair<f64, size_t>(UDMatrix[baseOffset + i], j);
+    }
+
+    baseOffset = (omega*(omega-1)/2) - (omega-i)*((omega-i)-1)/2 - i - 1;
+    for(size_t j = i+1; j < omega; j++)
+      if(oneSigma <= UDMatrix[baseOffset + j])
+        toSort[itr++] = pair<f64, size_t>(UDMatrix[baseOffset + j], j);
+
+    tmpPtr = realloc(toSort, sizeof(*toSort) * itr);
+    toSort = (pair<f64, size_t>*) tmpPtr;
+
+    if(0 == itr){
+      columnSize[i] = 0;
+      intermediateGraph[i] = NULL;
+      continue;
+    }
+
+    sortDoubleSizeTPairHighToLow(toSort, itr);
+
+    if(toSort[0].first < threeSigma)  shrinkSize = 0;
+    else if(itr < maxNumEdges)  shrinkSize = itr;
+    else                        shrinkSize = maxNumEdges;
+    for(; shrinkSize != 0 && toSort[shrinkSize-1].first < oneSigma; shrinkSize--);
+    columnSize[i] = shrinkSize;
+
+    if(0 == shrinkSize){
+      free(toSort);
+      intermediateGraph[i] = NULL;
+    }else{
+      tmpPtr = realloc(toSort, sizeof(*toSort) * shrinkSize);
+      intermediateGraph[i] = (pair<f64, size_t>*) tmpPtr;
+    }
+  }
+  
+  return NULL;
+}
+
+
 graph<geneData, f64>* constructGraph(
           const struct UDCorrelationMatrix &protoGraph, cf64 threeSigma,
                                         cf64 oneSigma, cu8 maxNumEdges){
@@ -329,6 +415,9 @@ graph<geneData, f64>* constructGraph(
   void *tmpPtr;
   pair<f64, size_t> *toSort, **intermediateGraph;
   size_t *columnSize;
+  pthread_t *workers;
+  struct constructGraphHelperStruct *instructions;
+  int *toIgnore;
   csize_t width = protoGraph.labels.size();
 
   cerr << "allocating preliminary memory..." << endl;
@@ -338,55 +427,42 @@ graph<geneData, f64>* constructGraph(
   tmpPtr = malloc(sizeof(*columnSize) * protoGraph.labels.size());
   columnSize = (size_t*) tmpPtr;
 
-  //Construct an intermediate matrix to be entered into the graph.  This
-  //is to avoid the high memory cost (and thus time cost) of the graph
-  //over manipulating simpler data.
-  for(size_t i = 0; i < protoGraph.labels.size(); i++){
-    //cerr << "constructing intermediary matrix data entry..." << endl;
-    size_t itr = 0;
-    size_t baseOffset;
-    tmpPtr = malloc(sizeof(*toSort) * (protoGraph.labels.size()-1));
-    toSort = (pair<f64, size_t>*) tmpPtr;
+  csize_t numCPUs = thread::hardware_concurrency() < width-1 ?
+                    thread::hardware_concurrency() : width-1 ;
 
+  tmpPtr = malloc(sizeof(*workers) * numCPUs);
+  workers = (pthread_t*) tmpPtr;
+  tmpPtr = malloc(sizeof(*instructions) * numCPUs);
+  instructions = (struct constructGraphHelperStruct*) tmpPtr;
 
-    for(size_t j = 0; j < i; j++){
-      baseOffset = (width*(width-1)/2) - (width-j)*((width-j)-1)/2 - j - 1;
-      if(oneSigma <= protoGraph.UDMatrix[baseOffset + i])
-        toSort[itr++] = pair<f64, size_t>(protoGraph.UDMatrix[baseOffset + i], j);
-    }
-
-    baseOffset = (width*(width-1)/2) - (width-i)*((width-i)-1)/2 - i - 1;
-    for(size_t j = i+1; j < protoGraph.labels.size(); j++)
-      if(oneSigma <= protoGraph.UDMatrix[baseOffset + j])
-        toSort[itr++] = pair<f64, size_t>(protoGraph.UDMatrix[baseOffset + j], j);
-
-    tmpPtr = realloc(toSort, sizeof(*toSort) * itr);
-    toSort = (pair<f64, size_t>*) tmpPtr;
-
-    if(0 == itr){
-      columnSize[intermediateGraphItr] = 0;
-      intermediateGraph[intermediateGraphItr++] = NULL;
-      continue;
-    }
-
-    sortDoubleSizeTPairHighToLow(toSort, itr);
-
-    size_t shrinkSize;
-    if(toSort[0].first < threeSigma)  shrinkSize = 0;//Conditional jump or move depends on uninitialised value(s)
-    else if(itr < maxNumEdges)  shrinkSize = itr;
-    else                        shrinkSize = maxNumEdges;
-    for(; shrinkSize != 0 && toSort[shrinkSize-1].first < oneSigma; shrinkSize--);
-    columnSize[intermediateGraphItr] = shrinkSize;
-
-    if(0 == shrinkSize){
-      free(toSort);
-      intermediateGraph[intermediateGraphItr++] = NULL;
-    }else{
-      tmpPtr = realloc(toSort, sizeof(*toSort) * shrinkSize);
-      intermediateGraph[intermediateGraphItr++] = (pair<f64, size_t>*) tmpPtr;
-    }
+  for(size_t i = 0; i < numCPUs; i++){
+    instructions[i].startIndex = (i * width) / numCPUs;
+    instructions[i].endIndex = ((i+1) * width) / numCPUs;
+    instructions[i].rowSize = protoGraph.labels.size();
+    instructions[i].UDMatrix = protoGraph.UDMatrix;
+    instructions[i].threeSigma = threeSigma;
+    instructions[i].oneSigma = oneSigma;
+    instructions[i].columnSize = columnSize;
+    instructions[i].intermediateGraph = intermediateGraph;
+    instructions[i].maxNumEdges = maxNumEdges;
   }
 
+  if(numCPUs > 1){
+    for(size_t i = 0; i < numCPUs; i++){
+      pthread_create(&workers[i], NULL, constructGraphHelper,
+                                                      &instructions[i]);
+    }
+
+    for(size_t i = 0; i < numCPUs; i++){
+      pthread_join(workers[i], (void**) &toIgnore);
+    }
+  }else{
+    constructGraphHelper((void*) instructions);
+  }
+
+  free(workers);
+  free(instructions);
+  
   //Now that we don't need the very large UDMatrix in protoGraph, free
   //it.  This is to try very hard to stay within the memory envelope of
   //the original program.  Granted, I'm not sure the original program
