@@ -126,7 +126,7 @@ int main(int argc, char **argv){
   settings = loadConfig(argv[1]);
   cerr << "Loaded" << endl;
   cerr << "verifying input...";
-  error = verifyInput(argc, argv, settings.geneListFile);
+  error = verifyInput(argc, argv);
   if(error){
     cerr << "invalid!" << endl;
     return error;
@@ -136,6 +136,7 @@ int main(int argc, char **argv){
   cerr << "Loading correlation matrix..."; fflush(stderr);
   protoGraph = generateUDMatrixFromFile(
                                       settings.expressionFile.c_str());
+  inPlaceAbsoluteValue(protoGraph.UDMatrix, protoGraph.numElements);
   convertCoeffToSigmaValue(protoGraph);
   cerr << "done" << endl;
 
