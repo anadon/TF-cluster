@@ -95,31 +95,11 @@ void sortDoubleSizeTPairHighToLowHelper(pair<f64, size_t> *toSort,
 ////////////////////////////////////////////////////////////////////////
 
 //TODO: this can be made more complete
-int verifyInput(int argc, char **argv, const string geneListFile){
+int verifyInput(int argc, char **argv){
 
   if( argc != 2 ) return EINVAL;
 
   int errorCode = 0;
-  vector<string> geneList;
-  vector< vector<string> > corrMatrix;
-  string tmp, headerGeneName, line;
-
-  ifstream geneListReader, exprCoeffReader;
-
-  geneListReader.open(geneListFile);
-
-  if(!geneListReader.good()){
-    cout << "could not access \"" << geneListFile << "\"" << endl;
-    return EIO;
-  }
-
-  while(geneListReader.good()){
-    string geneName;
-    geneListReader >> geneName;
-    if(string("") == geneName)  continue;
-    geneList.push_back(geneName);
-  }
-  geneListReader.close();
 
   return errorCode;
 }
@@ -204,7 +184,6 @@ struct config loadConfig(const char *configFilePath){
   bool errorInFile = false;
 
   settings.keepTopN = 100;
-  settings.geneListFile = "";
   settings.expressionFile = "";
   settings.kickSize = 0;
   settings.threeSigma = -1;
@@ -222,15 +201,6 @@ struct config loadConfig(const char *configFilePath){
   while(getline(configFile, line)){
     if(0 == line.size()) continue;
     if('#' == line[0]) continue;
-    if(string::npos != line.find("geneList")){
-      size_t startIndex = line.find("=") + 1;
-      size_t endIndex = line.find("#");
-      if(string::npos == endIndex) endIndex = line.size();
-      string readValue = line.substr(startIndex, endIndex - startIndex);
-      cerr << "setting geneList to " << readValue << endl;
-      settings.geneListFile = readValue;
-      continue;
-    }
     if(string::npos != line.find("expression")){
       size_t startIndex = line.find("=") + 1;
       size_t endIndex = line.find("#");
@@ -294,13 +264,6 @@ struct config loadConfig(const char *configFilePath){
   }
   configFile.close();
 
-  if(settings.geneListFile != ""){
-    cerr << "geneList is in \"" << settings.geneListFile << "\""
-         << endl;
-  }else{
-    cerr << "ERROR: geneList file not set" << endl;
-    errorInFile = true;
-  }
   if(settings.expressionFile != ""){
     cerr << "expression is in \"" << settings.expressionFile << "\""
          << endl;
@@ -745,6 +708,13 @@ void sortDoubleSizeTPairLowToHighHelper(pair<f64, size_t> *toSort,
     sortSpace[mergedParser++] = toSort[rightParser++];
   memcpy(&toSort[leftIndex], sortSpace,
                               sizeof(*toSort) * (endIndex - leftIndex));
+}
+
+
+void inPlaceAbsoluteValue(f64 *array, csize_t size){
+  for(size_t i = 0; i < size; i++)
+    if(0 > array[i])
+      array[i] = (-1.0) * array[i];
 }
 
 ////////////////////////////////////////////////////////////////////////

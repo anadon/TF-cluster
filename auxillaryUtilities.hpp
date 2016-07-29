@@ -59,7 +59,6 @@ typedef const double cf64;
  *  Describe relevant configuration information for a run of TF-cluster
  **********************************************************************/
 struct config{
-  string geneListFile;
   string expressionFile;
   u8 keepTopN;
   size_t kickSize;
@@ -87,7 +86,7 @@ struct addTopEdgesHelperStruct{
 /*******************************************************************//**
  *  Verify passed arguments are valid
  **********************************************************************/
-int verifyInput(int argc, char **argv, const string geneListFile);
+int verifyInput(int argc, char **argv);
 
 
 /*******************************************************************//**
@@ -181,6 +180,16 @@ void sortDoubleSizeTPairHighToLow(pair<f64, size_t> *toSort,
  **********************************************************************/
 void sortDoubleSizeTPairLowToHigh(pair<f64, size_t> *toSort,
                                                           csize_t size);
+
+
+/*******************************************************************//**
+ *  Set all elements in an array to their respective absolute values.
+ *
+ * @param[in,out] array Array of values to be changed to their absolute
+ *                      values.
+ * @param[in] size Number of elements in array.
+ **********************************************************************/
+void inPlaceAbsoluteValue(f64 *array, csize_t size);
 
 
 ////////////////////////////////////////////////////////////////////////
