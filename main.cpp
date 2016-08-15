@@ -119,60 +119,38 @@ int main(int argc, char **argv){
   struct config settings;
   int error;
   queue< queue<size_t> > result;
-  struct UDCorrelationMatrix protoGraph;
+  CMF protoGraph;
 
   //TODO: this can be safer
   cerr << "Loading configuration...";
   settings = loadConfig(argv[1]);
   cerr << "Loaded" << endl;
-  cerr << "verifying input...";
-  error = verifyInput(argc, argv);
+  
+  cerr << "verifying input" << endl;
+  error = verifyInput(argc, argv, settings);
   if(error){
     cerr << "invalid!" << endl;
     return error;
   }
-  cerr << "valid" << endl;
 
-  cerr << "Loading correlation matrix..."; fflush(stderr);
-  protoGraph = generateUDMatrixFromFile(
-                                      settings.expressionFile.c_str());
-  inPlaceAbsoluteValue(protoGraph.UDMatrix, protoGraph.numElements);
-  convertCoeffToSigmaValue(protoGraph);
-  cerr << "done" << endl;
+  cerr << "Loading correlation matrix" << endl;
+  protoGraph = generateMatrixFromFile(settings.expressionFile.c_str(), 
+                                            settings.geneList.c_str());
 
-  if(settings.keepTopN >= protoGraph.labels.size()){
+  if(settings.keepTopN >= protoGraph.GeneLabels.size()){
     cerr << "Too few genes to perform an analysis." << endl;
     return 0;
   }
 
-  /*cerr << "Printing correlation matrix...";
-  printCorrelationMatrix(protoGraph);
-  cerr << "done" << endl;*/
+  corrData = constructGraph(protoGraph, settings.oneSigma, 
+                                                    settings.keepTopN);
 
-  cerr << "Making graph..."; fflush(stderr);
-  corrData = constructGraph(protoGraph, settings.threeSigma,
-                                  settings.oneSigma, settings.keepTopN);
-  cerr << "done" << endl;
+  cerr << "Performing triple link" << endl;
+  result = tripleLink(corrData, settings.threeSigma, settings.twoSigma);
 
-  cerr << "Pruning graph...";
-  cerr << "done" << endl;
-
-  //printGraph(corrData, protoGraph.labels);
-
-  cerr << "Performing triple link..."; fflush(stderr);
-  result = tripleLink(corrData, settings.threeSigma,
-                            settings.twoSigma);
-  cerr << "done!" << endl;
-
-  printClusters(result, protoGraph.labels);
-
-  protoGraph.labels.clear();
+  printClusters(result, protoGraph.TFLabels);
 
   delete corrData;
-  //for(size_t i = 0; i < result.size(); i++)
-    //result[i].clear();
-    //delete result[i];
-  //result.clear();
 
   return 0;
 }

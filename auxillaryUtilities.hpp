@@ -33,7 +33,6 @@
 //NAMESPACE USING///////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////
 
-using std::hash;
 using std::pair;
 using std::size_t;
 using std::string;
@@ -60,6 +59,7 @@ typedef const double cf64;
  **********************************************************************/
 struct config{
   string expressionFile;
+  string geneList;
   u8 keepTopN;
   size_t kickSize;
   f64 threeSigma;
@@ -86,7 +86,7 @@ struct addTopEdgesHelperStruct{
 /*******************************************************************//**
  *  Verify passed arguments are valid
  **********************************************************************/
-int verifyInput(int argc, char **argv);
+int verifyInput(int argc, char **argv, struct config settings);
 
 
 /*******************************************************************//**
@@ -103,7 +103,7 @@ struct config loadConfig(const char *configFilePath);
  * @param[in,out] toPrune array of vertexes to sort their edges.
  * @param[in] size Number of vertexes in toPrune.
  **********************************************************************/
-void quickMergeEdges(vertex<geneData, f64> *toPrune, csize_t size);
+//void quickMergeEdges(vertex<geneData, f64> *toPrune, csize_t size);
 
 
 /*******************************************************************//**
@@ -140,8 +140,7 @@ void printEdges(graph<geneData, f64> *corrData);
  * @param[in] manNumEdges Upper bound on the number of edges a vertex
                           can have.
  **********************************************************************/
-graph<geneData, f64>* constructGraph(
-          const struct UDCorrelationMatrix &protoGraph, cf64 threeSigma,
+graph<geneData, f64>* constructGraph(const CMF &protoGraph, 
                                         cf64 oneSigma, cu8 maxNumEdges);
 
 
@@ -155,7 +154,7 @@ graph<geneData, f64>* constructGraph(
  * @param[in] keepTopN Maximum number of edges a vertex may have, as
                        specified in the settings file.
  **********************************************************************/
-void pruneGraph(graph<geneData, f64> *corrData, cu8 keepTopN);
+//void pruneGraph(graph<geneData, f64> *corrData, cu8 keepTopN);
 
 
 /*******************************************************************//**

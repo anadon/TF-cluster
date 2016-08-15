@@ -10,7 +10,7 @@ SOURCES=main.cpp auxillaryUtilities.cpp tripleLink.cpp geneData.cpp
 OBJECTS=main.o   auxillaryUtilities.o   tripleLink.o   geneData.o
 HEADERS=auxillaryUtilities.hpp edge.hpp geneData.hpp graph.hpp \
         tripleLink.hpp vertex.hpp
-CMTX_INCLUDE=correlation-matrix.hpp
+CMTX_INCLUDE=correlation-matrix.hpp statistics.h
 TEMPLATES=edge.t.hpp graph.t.hpp vertex.t.hpp
 
 all:$(EXEC)
@@ -24,6 +24,7 @@ $(EXEC):$(CMTX) $(OBJECTS)
 
 $(CMTX_INCLUDE):$(CMTX)
 	cp correlation-matrix/correlation-matrix.hpp .
+	cp correlation-matrix/statistics.h .
 
 $(CMTX):
 	git submodule update --remote
@@ -36,6 +37,7 @@ clean:
 	rm -f $(OBJECTS)
 	rm -f $(EXEC)
 	rm -f $(CMTX) $(CMTX_INCLUDE)
+	rm -f gmon.out
 	cd correlation-matrix/ ; make clean
 
 install:$(EXEC)
