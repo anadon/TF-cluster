@@ -53,6 +53,7 @@ The settings file acknowledges the following fields:
 ```
 expression=<PATH TO CORRELATION DATA>
 topPick=<NUMBER BETWEEN 1 and 255 inclusive>
+geneList -- this specifies entries which are transcription factors in <expression>
 tripleLink1=<POSITIVE FLOATING POINT VALUE, LARGEST>
 tripleLink2=<POSITIVE FLOATING POINT VALUE, MIDDLE>
 tripleLink3=<POSITIVE FLOATING POINT VALUE, SMALLEST>
@@ -63,7 +64,6 @@ but are no longer are:
 ```
 lib -- all resources are in the executable
 cpu -- the executable uses all available cores
-geneList -- this is no longer relevant
 kickSize -- The meaning of this has been opaque.  It may be re-added.
 ```
 
