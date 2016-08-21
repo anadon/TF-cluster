@@ -43,28 +43,28 @@ using std::cerr;
 ////////////////////////////////////////////////////////////////////////
 
 
-/*void printCorrelationMatrix(
-                            const struct correlationMatrix &protoGraph){
+/*
+void printCorrelationMatrix(const CMF &protoGraph){
   //vector< pair<size_t, double>* > matrix;
   //unordered_map<string, size_t> labelLookup;
   //vector<string> labels;
   //vector<size_t> colSize;
   printf("\t");
-  for(size_t i = 0; i < protoGraph.matrix.size();i++)
-    printf("%s\t", protoGraph.labels[i].c_str());
+  for(size_t i = 0; i < protoGraph.GeneLabels.size();i++)
+    printf("%s\t", protoGraph.GeneLabels[i].c_str());
 
 
-  for(size_t i = 0; i < protoGraph.matrix.size(); i++){
-    printf("%s\t", protoGraph.labels[i].c_str());
-    for(size_t j = 0; j < protoGraph.colSize[j]; j++){
-      printf("%lf\t", protoGraph.matrix[i][j].second);
+  for(size_t i = 0; i < protoGraph.TFLabels.size(); i++){
+    printf("%s\t", protoGraph.TFLabels[i].c_str());
+    for(size_t j = 0; j < protoGraph.GeneLabels.size(); j++){
+      printf("%lf\t", protoGraph.fullMatrix[i][j]);
     }
-    printf("\n\n");
+    printf("\n");
   }
 
-}
+}//*/
 
-
+/*
 bool isProtoGraphValid(const struct correlationMatrix &protoGraph){
   for(size_t i = 0; i < protoGraph.matrix.size(); i++){
     for(size_t j = 0; j < protoGraph.colSize[i]; j++){
@@ -141,6 +141,8 @@ int main(int argc, char **argv){
     cerr << "Too few genes to perform an analysis." << endl;
     return 0;
   }
+  
+  printCorrelationMatrix(protoGraph);
 
   corrData = constructGraph(protoGraph, settings.oneSigma, 
                                                     settings.keepTopN);
