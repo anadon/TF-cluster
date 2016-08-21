@@ -312,17 +312,27 @@ size_t XYToW(csize_t x, csize_t y, size_t n){
 
 void printCoincidenceMatrix(cf64 *matrix, csize_t width, cu8 maxMatch, 
                                               const vector<string> TFs){
+  f64 **mtr;
+  mtr = (f64**) malloc(sizeof(*mtr) * width);
+  for(size_t i = 0; i < width; i++)
+    mtr[i] = (f64*) malloc(sizeof(**mtr) * width);
+  
+  for(size_t i = 0; i < width; i++){\
+    mtr[i][i] = maxMatch;
+    for(size_t j = i+1; j < width; j++){
+      mtr[i][j] = mtr[j][i] = matrix[XYToW(i, j, width)];
+    }
+  }
+  
   for(size_t i = 0; i < width; i++){
     cout << TFs[i] << "\t";
-    for(size_t j = 0; j < i; j++){
-      cout << matrix[XYToW(i, j, width)] << "\t";
-    }
-    cout << (size_t) maxMatch << "\t";
-    for(size_t j = i+1; j < width; j++){
-      cout << matrix[XYToW(j, i, width)] << "\t";
+    for(size_t j = 0; j < width; j++){
+      cout << mtr[i][j] << "\t";
     }
     cout << endl;
+    free(mtr[i]);
   }
+  free(mtr);
   cout << endl << endl;
 }
 
@@ -411,6 +421,14 @@ graph<geneData, f64>* constructGraph(const CMF &protoGraph,
 
   cerr << "calculating sigma" << endl;
   sigma = 0;
+  f64 div = -1;
+  
+  for(size_t i = 0; i < UDMSize; i++)
+    if(coincidenceMatrix[i])
+      div++;
+
+  printCoincidenceMatrix(coincidenceMatrix, n, actualNumEdges, 
+                                                  protoGraph.TFLabels);
 
   inplaceCenterMean(coincidenceMatrix, UDMSize);
 
@@ -515,6 +533,11 @@ void sortDoubleSizeTPairHighToLow(pair<f64, size_t> *toSort,
   free(indiciesOfInterest);
   free(newIndiciesOfInterest);
   free(sortSpace);
+  
+  /*
+  for(size_t i = 0; i < size-1; i++)
+    if(toSort[i] < toSort[i+1])
+      raise(SIGABRT); //*/
 }
 
 
@@ -537,6 +560,11 @@ void sortDoubleSizeTPairHighToLowHelper(pair<f64, size_t> *toSort,
     sortSpace[mergedParser++] = toSort[rightParser++];
   memcpy(&toSort[leftIndex], sortSpace,
                               sizeof(*toSort) * (endIndex - leftIndex));
+  
+  /*
+  for(size_t i = leftIndex; i < endIndex-1; i++)
+    if(toSort[i] < toSort[i+1])
+      raise(SIGABRT);//*/
 }
 
 
