@@ -5,3 +5,4 @@ correlation-matrix-pthread
 triple-link-pthread
 correlation-matrix.*
 gmon.out
+statistics.h
