@@ -421,14 +421,6 @@ graph<geneData, f64>* constructGraph(const CMF &protoGraph,
 
   cerr << "calculating sigma" << endl;
   sigma = 0;
-  f64 div = -1;
-  
-  for(size_t i = 0; i < UDMSize; i++)
-    if(coincidenceMatrix[i])
-      div++;
-
-  printCoincidenceMatrix(coincidenceMatrix, n, actualNumEdges, 
-                                                  protoGraph.TFLabels);
 
   inplaceCenterMean(coincidenceMatrix, UDMSize);
 
