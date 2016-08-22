@@ -28,8 +28,6 @@ $(CMTX_INCLUDE):$(CMTX)
 
 $(CMTX):
 	git submodule update --remote
-	#git submodule update correlation-matrix
-	#cd correlation-matrix ; git pull
 	cd correlation-matrix ; make
 	mv correlation-matrix/correlation-matrix.a .
 
