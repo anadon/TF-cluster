@@ -141,8 +141,6 @@ int main(int argc, char **argv){
     cerr << "Too few genes to perform an analysis." << endl;
     return 0;
   }
-  
-  printCorrelationMatrix(protoGraph);
 
   corrData = constructGraph(protoGraph, settings.oneSigma, 
                                                     settings.keepTopN);
