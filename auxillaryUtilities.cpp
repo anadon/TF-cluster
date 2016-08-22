@@ -26,7 +26,6 @@
 #include <thread>
 #include <utility>
 
-
 #include "auxillaryUtilities.hpp"
 #include "edge.t.hpp"
 #include "graph.t.hpp"
@@ -46,7 +45,6 @@ using std::queue;
 using std::string;
 using std::thread;
 using std::vector;
-
 
 ////////////////////////////////////////////////////////////////////////
 //PRIVATE STRUCTS
@@ -117,7 +115,7 @@ struct config loadConfig(const char *configFilePath){
 
   settings.keepTopN = 100;
   settings.expressionFile = "";
-  settings.geneList = "";//labeled as geneList, but really contains TFs 
+  settings.geneList = "";//labeled as geneList, but really contains TFs
   settings.kickSize = 0;
   settings.threeSigma = -1;
   settings.twoSigma = -1;
@@ -245,7 +243,6 @@ struct config loadConfig(const char *configFilePath){
 
   if(errorInFile) exit(1);
 
-
   return settings;
 }
 
@@ -264,7 +261,7 @@ void printClusters(queue< queue<size_t> > clusters,
 
 
 void *constructGraphHelper(void *arg){
-  struct constructGraphHelperStruct *args = 
+  struct constructGraphHelperStruct *args =
                               (struct constructGraphHelperStruct*) arg;
   csize_t numerator = args->numerator;
   csize_t denominator = args->denominator;
@@ -273,14 +270,14 @@ void *constructGraphHelper(void *arg){
   cf64 **fullMatrix = args->fullMatrix;
   pair<f64, size_t> **intermediateGraph = args->intermediateGraph;
   cu8 maxNumEdges = args->maxNumEdges;
-  
+
   void *tmpPtr;
-  
-  for(size_t i = (numerator * numRows) / denominator; 
+
+  for(size_t i = (numerator * numRows) / denominator;
                     i < ((numerator + 1) * numRows) / denominator; i++){
     pair<f64, size_t> *toSort;
     size_t shrinkSize;
-    
+
     tmpPtr = malloc(sizeof(*toSort) * (numCols));
     toSort = (pair<f64, size_t>*) tmpPtr;
 
@@ -299,31 +296,33 @@ void *constructGraphHelper(void *arg){
 
     intermediateGraph[i] = toSort;
   }
-  
+
   return NULL;
 }
 
 
-size_t XYToW(csize_t x, csize_t y, size_t n){
+/* turn X, Y coordinates into a 1-D index value for a upper-diagonal
+ * matrix */
+size_t XYToW(csize_t &x, csize_t &y, size_t n){
   n--;
   return (n*(n-1)/2) - (n-y)*((n-y)-1)/2 + x - y - 1;
 }
 
 
-void printCoincidenceMatrix(cf64 *matrix, csize_t width, cu8 maxMatch, 
+void printCoincidenceMatrix(cf64 *matrix, csize_t width, cu8 maxMatch,
                                               const vector<string> TFs){
   f64 **mtr;
   mtr = (f64**) malloc(sizeof(*mtr) * width);
   for(size_t i = 0; i < width; i++)
     mtr[i] = (f64*) malloc(sizeof(**mtr) * width);
-  
+
   for(size_t i = 0; i < width; i++){\
     mtr[i][i] = maxMatch;
     for(size_t j = i+1; j < width; j++){
       mtr[i][j] = mtr[j][i] = matrix[XYToW(i, j, width)];
     }
   }
-  
+
   for(size_t i = 0; i < width; i++){
     cout << TFs[i] << "\t";
     for(size_t j = 0; j < width; j++){
@@ -337,7 +336,7 @@ void printCoincidenceMatrix(cf64 *matrix, csize_t width, cu8 maxMatch,
 }
 
 
-graph<geneData, f64>* constructGraph(const CMF &protoGraph, 
+graph<geneData, f64>* constructGraph(const CMF &protoGraph,
                                         cf64 oneSigma, cu8 maxNumEdges){
   graph<geneData, f64>* tr;
   void *tmpPtr;
@@ -347,16 +346,16 @@ graph<geneData, f64>* constructGraph(const CMF &protoGraph,
   int *toIgnore;
   f64 *coincidenceMatrix;
   f64 sigma;
-  
+
   csize_t n = protoGraph.numRows;
-  csize_t actualNumEdges = maxNumEdges < protoGraph.numCols ? 
+  csize_t actualNumEdges = maxNumEdges < protoGraph.numCols ?
                                       maxNumEdges : protoGraph.numCols;
   csize_t numCPUs = thread::hardware_concurrency() < n-1 ?
                     thread::hardware_concurrency() : n-1 ;
   csize_t UDMSize = (n * (n-1) / 2) -1;
 
   cerr << "allocating preliminary memory" << endl;
-  
+
   tmpPtr = malloc(sizeof(*intermediateGraph) * n);
   intermediateGraph = (pair<f64, size_t>**) tmpPtr;
   tmpPtr = malloc(sizeof(*workers) * numCPUs);
@@ -366,8 +365,8 @@ graph<geneData, f64>* constructGraph(const CMF &protoGraph,
 
   for(size_t i = 0; i < numCPUs; i++){
     instructions[i] = {
-      i, 
-      numCPUs, 
+      i,
+      numCPUs,
       protoGraph.numRows,
       protoGraph.numCols,
       (cf64**) protoGraph.fullMatrix,
@@ -390,7 +389,7 @@ graph<geneData, f64>* constructGraph(const CMF &protoGraph,
 
   free(workers);
   free(instructions);
-  
+
   //Don't need the very large UDMatrix in protoGraph; free it.
   for(size_t i = 0; i < protoGraph.numRows; i++)
     free(protoGraph.fullMatrix[i]);
@@ -399,7 +398,7 @@ graph<geneData, f64>* constructGraph(const CMF &protoGraph,
   cerr << "constructing correlation matrix" << endl;
 
   vector<bool> checks[protoGraph.numRows];
-  
+
   for(size_t i = 0; i < protoGraph.numRows; i++)
     checks[i] = vector<bool>(protoGraph.numCols, false);
 
@@ -426,7 +425,7 @@ graph<geneData, f64>* constructGraph(const CMF &protoGraph,
 
   for(size_t i = 0; i < UDMSize; i++)
     sigma += (coincidenceMatrix[i] * coincidenceMatrix[i]);
-  
+
   sigma = sqrt(sigma / (UDMSize-1));
   for(size_t i = 0; i < UDMSize; i++)
     coincidenceMatrix[i] /= sigma;
@@ -525,11 +524,6 @@ void sortDoubleSizeTPairHighToLow(pair<f64, size_t> *toSort,
   free(indiciesOfInterest);
   free(newIndiciesOfInterest);
   free(sortSpace);
-  
-  /*
-  for(size_t i = 0; i < size-1; i++)
-    if(toSort[i] < toSort[i+1])
-      raise(SIGABRT); //*/
 }
 
 
@@ -552,11 +546,6 @@ void sortDoubleSizeTPairHighToLowHelper(pair<f64, size_t> *toSort,
     sortSpace[mergedParser++] = toSort[rightParser++];
   memcpy(&toSort[leftIndex], sortSpace,
                               sizeof(*toSort) * (endIndex - leftIndex));
-  
-  /*
-  for(size_t i = leftIndex; i < endIndex-1; i++)
-    if(toSort[i] < toSort[i+1])
-      raise(SIGABRT);//*/
 }
 
 
