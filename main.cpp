@@ -76,6 +76,40 @@ bool isProtoGraphValid(const struct correlationMatrix &protoGraph){
 }*/
 
 
+void graphvizRepresentation(graph<geneData, f64> *corrData, vector<string> labels){
+  cout << "digraph rep{" << endl;
+  cout << endl;
+  cout << "bgcolor=\"transparent\"" << endl;
+  cout << "fontcolor = black" << endl;
+  cout << endl;
+  for(size_t i = 0; i < corrData->getNumVertexes(); i++){
+    cout << labels[corrData->getVertexes()[i]->value.nameIndex] << endl;
+  }
+  
+  for(size_t i = 0; i < corrData->getNumVertexes(); i++){
+    vertex<geneData, f64> *targetV;
+    targetV = corrData->getVertexes()[i];
+    for(size_t j = 0; j < targetV->getNumEdges(); j++){
+      edge<geneData, f64> *targetE;
+      targetE = corrData->getVertexes()[i]->getEdges()[j];
+      if(targetV == targetE->left){
+        cout << labels[targetE->left->value.nameIndex] << " -> ";
+        cout << labels[targetE->right->value.nameIndex] << " ;" << endl;
+      }
+    }
+  }
+  
+  cout << "}";
+}
+
+
+void printEdgeWeights(graph<geneData, f64> *corrData){
+  for(size_t i = 0; i < corrData->getNumEdges(); i++)
+    cout << corrData->getEdges()[i]->weight << endl;
+}
+  
+
+
 
 /*******************************************************************//**
  * print graph to make sense of it's contents to stderr.  The graph is
@@ -144,6 +178,10 @@ int main(int argc, char **argv){
 
   corrData = constructGraph(protoGraph, settings.oneSigma, 
                                                     settings.keepTopN);
+
+
+  //graphvizRepresentation(corrData, protoGraph.TFLabels);
+  //printEdgeWeights(corrData);
 
   cerr << "Performing triple link" << endl;
   result = tripleLink(corrData, settings.threeSigma, settings.twoSigma);

@@ -481,7 +481,10 @@ graph<geneData, f64>* constructGraph(const CMF &protoGraph,
   
   for(size_t i = 0; i < tr->getNumEdges(); i++){
     edge<geneData, f64> *test = tr->getEdges()[i];
-    if(oneSigma > test->weight) tr->removeEdge(test);
+    if(oneSigma > test->weight){
+      tr->removeEdge(test);
+      i = 0;
+    }
   }
 
   return tr;
