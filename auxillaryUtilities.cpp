@@ -418,17 +418,7 @@ graph<geneData, f64>* constructGraph(const CMF &protoGraph,
   for(size_t i = 0; i < protoGraph.numRows; i++)
     checks[i].clear();
 
-  cerr << "calculating sigma" << endl;
-  sigma = 0;
 
-  inplaceCenterMean(coincidenceMatrix, UDMSize);
-
-  for(size_t i = 0; i < UDMSize; i++)
-    sigma += (coincidenceMatrix[i] * coincidenceMatrix[i]);
-
-  sigma = sqrt(sigma / (UDMSize-1));
-  for(size_t i = 0; i < UDMSize; i++)
-    coincidenceMatrix[i] /= sigma;
 
   //now prepare the graph for all the data it is about to recieve, else
   //after the fact memory allocations can take minutes.
@@ -445,7 +435,7 @@ graph<geneData, f64>* constructGraph(const CMF &protoGraph,
     vertex<geneData, double> *left = tr->getVertexForValue(geneData(i));
     for(size_t j = i+1; j < protoGraph.numRows; j++){
       f64 weight = coincidenceMatrix[XYToW(j, i, n)];
-      if(weight >= oneSigma){
+      if(weight > 0){
         vertex<geneData, double> *right = tr->getVertexForValue(geneData(j));
         tr->addEdge(left, right, weight);
       }
@@ -454,6 +444,45 @@ graph<geneData, f64>* constructGraph(const CMF &protoGraph,
 
   for(size_t i = 0; i < protoGraph.numRows; i++)
     tr->getVertexForValue(geneData(i))->shrinkToFit();
+  
+  
+  f64 sum = 0, nonZeroCount = 0;
+  for(size_t i = 0; i < UDMSize; i++)
+    if(0.0 != coincidenceMatrix[i]){
+      sum += coincidenceMatrix[i];
+      nonZeroCount++;
+    }
+
+  sigma = 0;
+  sum = 0;
+  
+  for(size_t i = 0; i < tr->getNumEdges(); i++){
+    sum += tr->getEdges()[i]->weight;
+  }
+  
+  cf64 avg = sum / tr->getNumEdges();
+
+  cerr << "avg: " << avg << endl;
+  cerr << "clen: " << tr->getNumEdges() << endl;
+  
+  for(size_t i = 0; i < tr->getNumEdges(); i++)
+    tr->getEdges()[i]->weight -= avg;
+  
+  for(size_t i = 0; i < tr->getNumEdges(); i++){
+    cf64 tmp = tr->getEdges()[i]->weight;
+    sigma += (tmp * tmp);
+  }
+
+  sigma = sqrt(sigma / (tr->getNumEdges() -1));
+  cerr << "std: " << sigma << endl;
+  
+  for(size_t i = 0; i < tr->getNumEdges(); i++)
+    tr->getEdges()[i]->weight /= sigma;
+  
+  for(size_t i = 0; i < tr->getNumEdges(); i++){
+    edge<geneData, f64> *test = tr->getEdges()[i];
+    if(oneSigma > test->weight) tr->removeEdge(test);
+  }
 
   return tr;
 }
