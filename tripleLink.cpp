@@ -268,8 +268,10 @@ void markConnectedVertexesSingle(vertex<geneData, double> *markFrom,
   for(size_t i = 0; i < markFrom->getNumEdges(); i++)
     if(markConnectedVertexSingle(markFrom->getEdges()[i]->weight,
             markFrom->getEdges()[i]->other(markFrom), high, med,
-                                                          toProcessTo))
+                                                          toProcessTo)){
       geneNetwork->removeEdge(markFrom->getEdges()[i]);
+      i = 0;
+    }
 }
 
 
@@ -279,8 +281,10 @@ void markConnectedVertexesDouble(vertex<geneData, double> *markFrom,
   for(size_t i = 0; i < markFrom->getNumEdges(); i++)
     if(markConnectedVertexDouble(markFrom->getEdges()[i]->weight,
             markFrom->getEdges()[i]->other(markFrom), high, med,
-                                                          toProcessTo))
+                                                          toProcessTo)){
       geneNetwork->removeEdge(markFrom->getEdges()[i]);
+      i = 0;
+    }
 }
 
 
@@ -290,8 +294,10 @@ void markConnectedVertexesTriple(vertex<geneData, double> *markFrom,
   for(size_t i = 0; i < markFrom->getNumEdges(); i++)
     if(markConnectedVertexTriple(markFrom->getEdges()[i]->weight,
             markFrom->getEdges()[i]->other(markFrom), high, med,
-                                                          toProcessTo))
+                                                          toProcessTo)){
       geneNetwork->removeEdge(markFrom->getEdges()[i]);
+      i = 0;
+    }
 }
 
 
@@ -316,7 +322,7 @@ void removeWeakVerticies(graph<geneData, f64> *geneNetwork, cf64 high,
       if(2 > target->getNumEdges()){
         geneNetwork->removeVertex(target);
         disconnectedVerticiesFound = true;
-        break;
+        continue;
       }
 
       bool highFound, medFound;
@@ -331,7 +337,6 @@ void removeWeakVerticies(graph<geneData, f64> *geneNetwork, cf64 high,
       if(!highFound || !medFound){
         geneNetwork->removeVertex(target);
         disconnectedVerticiesFound = true;
-        break;
       }
     }
   }while(disconnectedVerticiesFound);
