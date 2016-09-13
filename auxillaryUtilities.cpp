@@ -347,9 +347,9 @@ graph<geneData, f64>* constructGraph(const CMF &protoGraph,
   f64 *coincidenceMatrix;
   f64 sigma;
 
-  csize_t n = protoGraph.numRows;
-  csize_t actualNumEdges = maxNumEdges < protoGraph.numCols ?
-                                      maxNumEdges : protoGraph.numCols;
+  csize_t n = protoGraph.numRows();
+  csize_t actualNumEdges = maxNumEdges < protoGraph.numCols() ?
+                                      maxNumEdges : protoGraph.numCols();
   csize_t numCPUs = thread::hardware_concurrency() < n-1 ?
                     thread::hardware_concurrency() : n-1 ;
   csize_t UDMSize = (n * (n-1) / 2) -1;
@@ -367,8 +367,8 @@ graph<geneData, f64>* constructGraph(const CMF &protoGraph,
     instructions[i] = {
       i,
       numCPUs,
-      protoGraph.numRows,
-      protoGraph.numCols,
+      protoGraph.numRows(),
+      protoGraph.numCols(),
       (cf64**) protoGraph.fullMatrix,
       intermediateGraph,
       maxNumEdges
@@ -391,31 +391,31 @@ graph<geneData, f64>* constructGraph(const CMF &protoGraph,
   free(instructions);
 
   //Don't need the very large UDMatrix in protoGraph; free it.
-  for(size_t i = 0; i < protoGraph.numRows; i++)
+  for(size_t i = 0; i < protoGraph.numRows(); i++)
     free(protoGraph.fullMatrix[i]);
   free(protoGraph.fullMatrix);
 
-  cerr << "constructing correlation matrix" << endl;
+  cerr << "constructing coincidence matrix" << endl;
 
-  vector<bool> checks[protoGraph.numRows];
+  vector<bool> checks[protoGraph.numRows()];
 
-  for(size_t i = 0; i < protoGraph.numRows; i++)
-    checks[i] = vector<bool>(protoGraph.numCols, false);
+  for(size_t i = 0; i < protoGraph.numRows(); i++)
+    checks[i] = vector<bool>(protoGraph.numCols(), false);
 
-  for(size_t i = 0; i < protoGraph.numRows; i++)
+  for(size_t i = 0; i < protoGraph.numRows(); i++)
     for(size_t j = 0; j < actualNumEdges; j++)
       checks[i][intermediateGraph[i][j].second] = true;
 
   tmpPtr = calloc(sizeof(*coincidenceMatrix), UDMSize);
   coincidenceMatrix = (f64*) tmpPtr;
 
-  for(size_t i = 0; i < protoGraph.numRows; i++)
-    for(size_t j = i+1; j < protoGraph.numRows; j++)
+  for(size_t i = 0; i < protoGraph.numRows(); i++)
+    for(size_t j = i+1; j < protoGraph.numRows(); j++)
       for(size_t k = 0; k < actualNumEdges; k++)
         if(checks[i][intermediateGraph[j][k].second])
           coincidenceMatrix[(n*(n-1)/2) - (n-i)*((n-i)-1)/2 + j - i - 1]++;
 
-  for(size_t i = 0; i < protoGraph.numRows; i++)
+  for(size_t i = 0; i < protoGraph.numRows(); i++)
     checks[i].clear();
 
 
@@ -425,15 +425,15 @@ graph<geneData, f64>* constructGraph(const CMF &protoGraph,
   cerr << "constructing graph" << endl;
   tr = new graph<geneData, f64>();
 
-  tr->hintNumVertexes(protoGraph.numRows);
-  tr->hintNumEdges(protoGraph.numRows * actualNumEdges);
+  tr->hintNumVertexes(protoGraph.numRows());
+  tr->hintNumEdges(protoGraph.numRows() * actualNumEdges);
 
   for(size_t i = 0; i < n; i++)
     tr->addVertex(geneData(i))->hintNumEdges(actualNumEdges);
 
-  for(size_t i = 0; i < protoGraph.numRows; i++){
+  for(size_t i = 0; i < protoGraph.numRows(); i++){
     vertex<geneData, double> *left = tr->getVertexForValue(geneData(i));
-    for(size_t j = i+1; j < protoGraph.numRows; j++){
+    for(size_t j = i+1; j < protoGraph.numRows(); j++){
       f64 weight = coincidenceMatrix[XYToW(j, i, n)];
       if(weight > 0){
         vertex<geneData, double> *right = tr->getVertexForValue(geneData(j));
@@ -442,7 +442,7 @@ graph<geneData, f64>* constructGraph(const CMF &protoGraph,
     }
   }
 
-  for(size_t i = 0; i < protoGraph.numRows; i++)
+  for(size_t i = 0; i < protoGraph.numRows(); i++)
     tr->getVertexForValue(geneData(i))->shrinkToFit();
   
   
