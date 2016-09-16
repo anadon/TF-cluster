@@ -107,6 +107,16 @@ void printEdgeWeights(graph<geneData, f64> *corrData){
   for(size_t i = 0; i < corrData->getNumEdges(); i++)
     cout << corrData->getEdges()[i]->weight << endl;
 }
+
+
+void printProtoGraph(const CMF &toPrint){
+  for(size_t i = 0; i < toPrint.numRows(); i++){
+    for(size_t j = 0; j < toPrint.numCols(); j++){
+      fprintf(stdout, "%s\t%s\t%lf\n", toPrint.TFLabels[i].c_str(), 
+                      toPrint.GeneLabels[j].c_str(), toPrint.fullMatrix[i][j]);
+    }
+  }
+}
   
 
 
@@ -124,11 +134,10 @@ void printEdgeWeights(graph<geneData, f64> *corrData){
 void printGraph(graph<geneData, f64> *toPrint,
                                           const vector<string> &labels){
   for(size_t i = 0; i < toPrint->getNumVertexes(); i++){
-    fprintf(stderr, "%s\n[ ",
-          labels[toPrint->getVertexes()[i]->value.nameIndex].c_str());
     for(size_t j = 0; j < toPrint->getVertexes()[i]->getNumEdges();
                                                                   j++){
-      fprintf(stderr, "{%s , %lf}\t",
+      fprintf(stderr, "%s\t%s\t%lf\n",
+          labels[toPrint->getVertexes()[i]->value.nameIndex].c_str(),
 labels[toPrint->getVertexes()[i]->getEdges()[j]->other(toPrint->getVertexes()[i])->value.nameIndex].c_str(),
                     toPrint->getVertexes()[i]->getEdges()[j]->weight);
     }
@@ -175,7 +184,9 @@ int main(int argc, char **argv){
     cerr << "Too few genes to perform an analysis." << endl;
     return 0;
   }
-
+  printProtoGraph(protoGraph);
+  exit(0);
+  
   corrData = constructGraph(protoGraph, settings.oneSigma, 
                                                     settings.keepTopN);
 
