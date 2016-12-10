@@ -41,6 +41,7 @@ template <typename T, typename U> class vertex{
   private:
   edge<T, U> **edges;
   size_t numEdges, edgesSize;
+  unordered_map<vertex<T, U>*, edge<T, U>*> connected;
 
   public:
   size_t vertexIndex;
@@ -128,6 +129,13 @@ template <typename T, typename U> class vertex{
  * same vertex from a single graph.
  **********************************************************************/
   bool operator==(const vertex<T, U> &other) const;
+  
+  
+/*******************************************************************//**
+ * Tell if there is an edge connecting this vertex to another vertex
+ **********************************************************************/
+  bool areConnected(vertex<T, U> *other) const;
+
 
   private:
 
@@ -139,6 +147,24 @@ template <typename T, typename U> class vertex{
   void ensureEdgeCapacity(const size_t size);
 
 };
+
+
+
+//namespace std{
+  //template <> struct hash< *vertex > {
+
+///*******************************************************************//**
+ //*  Add a hash specialization to handle geneData in the standard
+ //* namespace.  Hash is given as the name index, since it can be assumed
+ //* this is unique within a given graph.
+ //*
+ //* @param[in] toHash geneData that will give it's nameIndex as a hash.
+ //**********************************************************************/
+    //std::size_t operator()(vertex const& *toHash) const {
+      //return (size_t) toHash;
+    //}
+  //};
+//}
 
 ////////////////////////////////////////////////////////////////////////
 //END///////////////////////////////////////////////////////////////////

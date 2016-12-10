@@ -57,14 +57,15 @@ typedef const double cf64;
 /*******************************************************************//**
  *  Describe relevant configuration information for a run of TF-cluster
  **********************************************************************/
-struct config{
-  string expressionFile;
-  string geneList;
+struct config{  
+  s8 *tflist;
+  s8 *exprData;
+  s8 *corrMethod;
+  
+  double threeSigma, twoSigma, oneSigma;
+  u8 threeSigmaAdj, twoSigmaAdj, oneSigmaAdj;
+  
   u8 keepTopN;
-  size_t kickSize;
-  f64 threeSigma;
-  f64 twoSigma;
-  f64 oneSigma;
 };
 
 
@@ -79,6 +80,18 @@ struct addTopEdgesHelperStruct{
   size_t endIndex;
 };
 
+
+//TODO
+struct sortCoindicenceMatrixHelperStruct{
+  size_t numerator;
+  size_t denominator;
+  u8 *coindicenceMatrix;
+  size_t n;
+  pair<u8, size_t>** sortedCoincidenceMatrix;
+  u8 keepTopN;
+};
+
+
 ////////////////////////////////////////////////////////////////////////
 //PUBLIC/ FUNCTION DECLARATIONS/////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////
@@ -86,15 +99,7 @@ struct addTopEdgesHelperStruct{
 /*******************************************************************//**
  *  Verify passed arguments are valid
  **********************************************************************/
-int verifyInput(int argc, char **argv, struct config settings);
-
-
-/*******************************************************************//**
- *  Load configuration file data into a struct config .
- **********************************************************************/
-struct config loadConfig(const char *configFilePath);
-
-//struct loadFromFileReturn loadFromFile(const string geneListFile);
+int verifyInput(struct config settings);
 
 
 /*******************************************************************//**
@@ -140,8 +145,9 @@ void printEdges(graph<geneData, f64> *corrData);
  * @param[in] manNumEdges Upper bound on the number of edges a vertex
                           can have.
  **********************************************************************/
-graph<geneData, f64>* constructGraph(const CMF &protoGraph, 
-                                        cf64 oneSigma, cu8 maxNumEdges);
+//TODO: update doc
+graph<geneData, u8>* constructGraph(const CMF &protoGraph, 
+                                              struct config &settings);
 
 
 /*******************************************************************//**
@@ -189,6 +195,11 @@ void sortDoubleSizeTPairLowToHigh(pair<f64, size_t> *toSort,
  * @param[in] size Number of elements in array.
  **********************************************************************/
 void inPlaceAbsoluteValue(f64 *array, csize_t size);
+
+
+//TODO add doc
+pair<u8, size_t>* countingSortHighToLow(pair<u8, size_t> *toSort, 
+                                                            csize_t n);
 
 
 ////////////////////////////////////////////////////////////////////////

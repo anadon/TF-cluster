@@ -51,6 +51,9 @@ template <typename T, typename U> size_t vertex<T, U>::addEdge(
                                                 edge<T, U> *toRegister){
   ensureEdgeCapacity(numEdges+1);
   edges[numEdges] = toRegister;
+  pair<vertex<T, U>*, edge<T, U>* > toInsert;
+  toInsert = pair<vertex<T, U>*, edge<T, U>* >(toRegister->other(this), toRegister);
+  connected.insert(toInsert);
   numEdges++;
 
   return numEdges-1;
@@ -94,6 +97,8 @@ template <typename T, typename U> void vertex<T, U>::removeEdge(
   //that's the network's job).
   memCheck = realloc(edges, numEdges * sizeof(*edges));
   edges = (edge<T, U>**) memCheck;
+  
+  connected.erase(toRemove->other(this));
 }
 
 
@@ -129,7 +134,7 @@ template <typename T, typename U> void vertex<T, U>::hintNumEdges(
 
   tmpPtr = realloc(edges, sizeof(*edges) * suggestSize);
   if(NULL == tmpPtr) raise(SIGABRT);
-  edges = (edge<geneData, double>**) tmpPtr;
+  edges = (edge<T, U>**) tmpPtr;
 
   edgesSize = suggestSize;
 }
@@ -145,6 +150,13 @@ template <typename T, typename U> void vertex<T, U>::ensureEdgeCapacity(
   while(size > edgesSize)
     hintNumEdges(1 + (edgesSize << 1));
 }
+
+
+template <typename T, typename U> bool vertex<T, U>::areConnected(
+                                            vertex<T, U> *other) const{
+  return connected.count(other);
+}
+
 
 ////////////////////////////////////////////////////////////////////////
 //END///////////////////////////////////////////////////////////////////

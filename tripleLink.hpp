@@ -42,8 +42,8 @@
  *                       triple-link.
  * @param[in] twoSigma Medium value used for edges in triple-link.
  **********************************************************************/
-queue< queue<size_t> > tripleLink(graph<geneData, double> *geneNetwork,
-                    cf64 threeSigma, cf64 twoSigma);
+queue< queue<size_t> > tripleLink(graph<geneData, unsigned char> *geneNetwork,
+                    const struct config &settings);
 
 ////////////////////////////////////////////////////////////////////////
 //END///////////////////////////////////////////////////////////////////

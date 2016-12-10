@@ -72,6 +72,12 @@ struct constructGraphHelperStruct{
 ////////////////////////////////////////////////////////////////////////
 
 /*******************************************************************//**
+ * verify parsed input as complete and valid
+ **********************************************************************/
+int verifyInput(const struct config settings);
+
+
+/*******************************************************************//**
  *  A helper function to sortDoubleSizeTPairLowToHigh().
  **********************************************************************/
 void sortDoubleSizeTPairLowToHighHelper(pair<f64, size_t> *toSort,
@@ -92,158 +98,59 @@ void sortDoubleSizeTPairHighToLowHelper(pair<f64, size_t> *toSort,
  **********************************************************************/
 void *constructGraph(void *arg);
 
+
+//TODO: add doc
+size_t XYToW(csize_t &x, csize_t &y, size_t n);
+
+
+//TODO: add doc
+
+pair<u8, size_t>* countingSortHighToLow(pair<u8, size_t> *toSort, 
+                                                            csize_t n);
+
 ////////////////////////////////////////////////////////////////////////
 //FUNCTION DEFINITIONS//////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////
 
-//TODO: this can be made more complete
-int verifyInput(int argc, char **argv, struct config settings){
-
-  if( argc != 2 ) return EINVAL;
-
-  int errorCode = 0;
-
-  return errorCode;
-}
-
-
-struct config loadConfig(const char *configFilePath){
-  struct config settings;
-  ifstream configFile;
-  string line;
-  bool errorInFile = false;
-
-  settings.keepTopN = 100;
-  settings.expressionFile = "";
-  settings.geneList = "";//labeled as geneList, but really contains TFs
-  settings.kickSize = 0;
-  settings.threeSigma = -1;
-  settings.twoSigma = -1;
-  settings.oneSigma = -1;
-
-  configFile.open(configFilePath);
-
-  if(!configFile.is_open()){
-    cerr << "ERROR: cannot open required file \"SCCM_pipe.cfg\""
-         << endl;
-    exit(1);
+int verifyInput(const struct config settings){
+  if(NULL == settings.tflist){
+    cerr << "file path to transcription factor names not given" << endl;
+    return EINVAL;
   }
-
-  while(getline(configFile, line)){
-    if(0 == line.size()) continue;
-    if('#' == line[0]) continue;
-    if(string::npos != line.find("expression")){
-      size_t startIndex = line.find("=") + 1;
-      size_t endIndex = line.find("#");
-      if(string::npos == endIndex) endIndex = line.size();
-      string readValue = line.substr(startIndex, endIndex - startIndex);
-      cerr << "setting expression to " << readValue << endl;
-      settings.expressionFile = readValue;
-      continue;
-    }
-    if(string::npos != line.find("geneList")){
-      size_t startIndex = line.find("=") + 1;
-      size_t endIndex = line.find("#");
-      if(string::npos == endIndex) endIndex = line.size();
-      string readValue = line.substr(startIndex, endIndex - startIndex);
-      cerr << "setting geneList to " << readValue << endl;
-      settings.geneList = readValue;
-      continue;
-    }
-    if(string::npos != line.find("topPick")){
-      size_t startIndex = line.find("=") + 1;
-      size_t endIndex = line.find("#");
-      if(string::npos == endIndex) endIndex = line.size();
-      string readValue = line.substr(startIndex, endIndex - startIndex);
-      cerr << "setting topPick to " << readValue << endl;
-      int readInt = atoi(readValue.c_str());
-      if(0 > readInt || 255 < readInt){
-        cerr << "Keep Top N value out of bounds (0,255]" << endl;
-        exit(1);
-      }
-      settings.keepTopN = (u8) readInt;
-      continue;
-    }
-    if(string::npos != line.find("kickSize")){
-      size_t startIndex = line.find("=") + 1;
-      size_t endIndex = line.find("#");
-      if(string::npos == endIndex) endIndex = line.size();
-      string readValue = line.substr(startIndex, endIndex - startIndex);
-      cerr << "setting kickSize to " << readValue << endl;
-      settings.kickSize = atoi(readValue.c_str());
-      continue;
-    }
-    if(string::npos != line.find("tripleLink1")){
-      size_t startIndex = line.find("=") + 1;
-      size_t endIndex = line.find("#");
-      if(string::npos == endIndex) endIndex = line.size();
-      string readValue = line.substr(startIndex, endIndex - startIndex);
-      cerr << "setting threeSigma to " << readValue << endl;
-      settings.threeSigma = atof(readValue.c_str());
-      continue;
-    }
-    if(string::npos != line.find("tripleLink2")){
-      size_t startIndex = line.find("=") + 1;
-      size_t endIndex = line.find("#") + 1;
-      if(string::npos == endIndex) endIndex = line.size();
-      string readValue = line.substr(startIndex, endIndex - startIndex);
-      cerr << "setting twoSigma to " << readValue << endl;
-      settings.twoSigma = atof(readValue.c_str());
-      continue;
-    }
-    if(string::npos != line.find("tripleLink3")){
-      size_t startIndex = line.find("=") + 1;
-      size_t endIndex = line.find("#");
-      if(string::npos == endIndex) endIndex = line.size();
-      string readValue = line.substr(startIndex, endIndex - startIndex);
-      cerr << "setting oneSigma to " << readValue << endl;
-      settings.oneSigma = atof(readValue.c_str());
-      continue;
-    }
-    cerr << "Skipped line \"" << line << "\"" << endl;
+  if(NULL == settings.exprData){
+    cerr << "file path to expression data not given" << endl;
+    return EINVAL;
   }
-  configFile.close();
-
-  if(settings.expressionFile != ""){
-    cerr << "expression is in \"" << settings.expressionFile << "\""
-         << endl;
-  }else{
-    cerr << "ERROR: expression file not set" << endl;
-    errorInFile = true;
+  if(NULL == settings.corrMethod){
+    cerr << "correlation calculation method not given" << endl;
+    return EINVAL;
   }
-
-  cerr << "topPick is " << (short) settings.keepTopN << endl;
-
-  cerr << "kickSize is " << settings.kickSize << endl;
-
-  if(settings.threeSigma < 0){
-    cerr << "ERROR: threeSigma is less than 0" << endl;
-    errorInFile = true;
-  }else if(settings.threeSigma < settings.twoSigma){
-    cerr << "ERROR: threeSigma is smaller than twoSigma" << endl;
-    errorInFile = true;
-  }else{
-    cerr << "threeSigma is " << settings.threeSigma << endl;
+  if(0.0  == settings.threeSigma){
+    cerr << "triple link 1 not set" << endl;
+    return EINVAL;
   }
-  if(settings.twoSigma < 0){
-    cerr << "ERROR: twoSigma is less than 0" << endl;
-    errorInFile = true;
-  }else if(settings.twoSigma < settings.oneSigma){
-    cerr << "ERROR: twoSigma is smaller than oneSigma" << endl;
-    errorInFile = true;
-  }else{
-    cerr << "twoSigma is " << settings.twoSigma << endl;
+  if(0.0  == settings.twoSigma){
+    cerr << "triple link 2 not set" << endl;
+    return EINVAL;
   }
-  if(settings.oneSigma < 0){
-    cerr << "ERROR: oneSigma is smaller than 0" << endl;
-    errorInFile = true;
-  }else{
-    cerr << "oneSigma is " << settings.oneSigma << endl;
+  if(0.0  == settings.oneSigma){
+    cerr << "triple link 3 not set" << endl;
+    return EINVAL;
   }
-
-  if(errorInFile) exit(1);
-
-  return settings;
+  if(settings.threeSigma <= settings.twoSigma){
+    cerr << "triple link 1 is less than or equal to triple link 2" << endl;
+    return EINVAL;
+  }
+  if(settings.twoSigma <= settings.oneSigma){
+    cerr << "triple link 2 is less than or equal triple link 1" << endl;
+    return EINVAL;
+  }
+  if(0    == settings.keepTopN){
+    cerr << "number of top links to keep is not set" << endl;
+    return EINVAL;
+  }
+  
+  return 0;
 }
 
 
@@ -260,6 +167,11 @@ void printClusters(queue< queue<size_t> > clusters,
 }
 
 
+/***********************************************************************
+ * Returns for each TF an array of pairs containing an index to the gene
+ * name and its correlation coefficient sorted from highest correlation
+ * to lowest correlation.
+ * ********************************************************************/
 void *constructGraphHelper(void *arg){
   struct constructGraphHelperStruct *args =
                               (struct constructGraphHelperStruct*) arg;
@@ -301,11 +213,64 @@ void *constructGraphHelper(void *arg){
 }
 
 
+/***********************************************************************
+ * Returns for each TF an array of pairs containing an index to the gene
+ * name and its correlation coefficient sorted from highest correlation
+ * to lowest correlation.
+ * ********************************************************************/
+void *sortCoindicenceMatrixHelper(void *arg){
+  struct sortCoindicenceMatrixHelperStruct *args =
+                        (struct sortCoindicenceMatrixHelperStruct*) arg;
+  csize_t numerator = args->numerator;
+  csize_t denominator = args->denominator;
+  cu8 *coincidenceMatrix = args->coindicenceMatrix;
+  csize_t n = args->n;
+  pair<u8, size_t> **sortedCoincidenceMatrix;
+  cu8 keepTopN = args->keepTopN;
+  void *tmpPtr;
+  pair<u8, size_t> *sortColumn;
+  
+  sortedCoincidenceMatrix = args->sortedCoincidenceMatrix;
+  
+  
+  tmpPtr = malloc(sizeof(**sortedCoincidenceMatrix) * (n-1));
+  sortColumn = (pair<u8, size_t>*) tmpPtr;
+
+
+  for(size_t itr = (numerator * n) / denominator;
+                      itr < ((numerator + 1) * n) / denominator; itr++){
+    
+    
+      for(size_t j = 0; j < itr; j++){
+        pair<u8, size_t> toAdd;
+        toAdd = pair<u8, size_t>(coincidenceMatrix[XYToW(j, itr, n)], j);
+        sortColumn[j] = toAdd;
+      }
+      for(size_t j = itr+1; j < n; j++){
+        pair<u8, size_t> toAdd;
+        toAdd = pair<u8, size_t>(coincidenceMatrix[XYToW(itr, j, n)], j);
+        sortColumn[j-1] = toAdd;
+      }
+    
+    pair<u8, size_t> *sorted;
+    sorted = countingSortHighToLow(sortColumn, n-1);
+    tmpPtr = realloc(sorted, sizeof(*sorted) * keepTopN);
+    sorted = (pair<u8, size_t>*) tmpPtr;
+    sortedCoincidenceMatrix[itr] = sorted;
+  }
+  
+  free(sortColumn);
+
+  return NULL;
+}
+
+
 /* turn X, Y coordinates into a 1-D index value for a upper-diagonal
  * matrix */
 size_t XYToW(csize_t &x, csize_t &y, size_t n){
   n--;
   return (n*(n-1)/2) - (n-y)*((n-y)-1)/2 + x - y - 1;
+  //or? (n*(n-1)/2) - (n-i)*((n-i)-1)/2 + j - i - 1
 }
 
 
@@ -336,22 +301,31 @@ void printCoincidenceMatrix(cf64 *matrix, csize_t width, cu8 maxMatch,
 }
 
 
-graph<geneData, f64>* constructGraph(const CMF &protoGraph,
-                                        cf64 oneSigma, cu8 maxNumEdges){
-  graph<geneData, f64>* tr;
+graph<geneData, u8>* constructGraph(const CMF &protoGraph,
+                                                struct config &settings){
+  graph<geneData, u8>* tr;
   void *tmpPtr;
   pair<f64, size_t> **intermediateGraph;
   pthread_t *workers;
   struct constructGraphHelperStruct *instructions;
   int *toIgnore;
-  f64 *coincidenceMatrix;
+  //f64 *coincidenceMatrix; //This can't represent the data in a close 
+  //enough way to the originalities nuances.  Keep note here for legacy.
+  u8 *coincidenceMatrix;
+  pair<u8, size_t> **sortedCoincidenceMatrix;
   f64 sigma;
+  size_t clen, sum;
+  struct sortCoindicenceMatrixHelperStruct *sortInstructions;
+  
 
+  /*This is setting up for a general multithreading job dispatch*/
   csize_t n = protoGraph.numRows();
-  csize_t actualNumEdges = maxNumEdges < protoGraph.numCols() ?
-                                      maxNumEdges : protoGraph.numCols();
+  cu8 actualNumEdges = (u8) settings.keepTopN < protoGraph.numCols() ?
+                              settings.keepTopN : protoGraph.numCols();
   csize_t numCPUs = thread::hardware_concurrency() < n-1 ?
                     thread::hardware_concurrency() : n-1 ;
+  //csize_t numCPUs = 1;
+
   csize_t UDMSize = (n * (n-1) / 2) -1;
 
   cerr << "allocating preliminary memory" << endl;
@@ -363,6 +337,7 @@ graph<geneData, f64>* constructGraph(const CMF &protoGraph,
   tmpPtr = malloc(sizeof(*instructions) * numCPUs);
   instructions = (struct constructGraphHelperStruct*) tmpPtr;
 
+  /*Setting up directions for each thread*/
   for(size_t i = 0; i < numCPUs; i++){
     instructions[i] = {
       i,
@@ -371,12 +346,12 @@ graph<geneData, f64>* constructGraph(const CMF &protoGraph,
       protoGraph.numCols(),
       (cf64**) protoGraph.fullMatrix,
       intermediateGraph,
-      maxNumEdges
+      actualNumEdges
     };
   }
 
   cerr << "sorting edges" << endl;
-
+  /*See constructGraphHelper() for the results*/
   if(numCPUs > 1){
     for(size_t i = 0; i < numCPUs; i++)
       pthread_create(&workers[i], NULL, constructGraphHelper,
@@ -397,6 +372,9 @@ graph<geneData, f64>* constructGraph(const CMF &protoGraph,
 
   cerr << "constructing coincidence matrix" << endl;
 
+  /*The coincidence matrix logic is best detailed in the paper*/
+  //TODO: detail coincidence matrix here
+
   vector<bool> checks[protoGraph.numRows()];
 
   for(size_t i = 0; i < protoGraph.numRows(); i++)
@@ -407,23 +385,104 @@ graph<geneData, f64>* constructGraph(const CMF &protoGraph,
       checks[i][intermediateGraph[i][j].second] = true;
 
   tmpPtr = calloc(sizeof(*coincidenceMatrix), UDMSize);
-  coincidenceMatrix = (f64*) tmpPtr;
+  coincidenceMatrix = (u8*) tmpPtr;
 
   for(size_t i = 0; i < protoGraph.numRows(); i++)
     for(size_t j = i+1; j < protoGraph.numRows(); j++)
       for(size_t k = 0; k < actualNumEdges; k++)
         if(checks[i][intermediateGraph[j][k].second])
-          coincidenceMatrix[(n*(n-1)/2) - (n-i)*((n-i)-1)/2 + j - i - 1]++;
+          coincidenceMatrix[XYToW(j, i, n)]++;
+  
+  //printCoincidenceMatrix(coincidenceMatrix, n, actualNumEdges, 
+  //                                                protoGraph.TFLabels);
 
   for(size_t i = 0; i < protoGraph.numRows(); i++)
     checks[i].clear();
+  
+  //Now the coincidence matrix needs to be sorted again in order to only
+  //add the top keepN entries into the graph for consideration.
+  
+  cerr << "Sorting coincidence matrix" << endl;
+  
+  tmpPtr = malloc(sizeof(*sortInstructions) * numCPUs);
+  sortInstructions = (struct sortCoindicenceMatrixHelperStruct*) tmpPtr;
+  tmpPtr = malloc(sizeof(*sortedCoincidenceMatrix) * n);
+  sortedCoincidenceMatrix = (pair<u8, size_t>**) tmpPtr;
+  
+  for(size_t i = 0; i <numCPUs; i++){
+    sortInstructions[i] = {
+      i,
+      numCPUs,
+      coincidenceMatrix,
+      n,
+      sortedCoincidenceMatrix,
+      actualNumEdges
+    };
+  }
+  
+  if(numCPUs > 1){
+    tmpPtr = malloc(sizeof(*workers) * numCPUs);
+    workers = (pthread_t*) tmpPtr;
+  
+    for(size_t i = 0; i < numCPUs; i++)
+      pthread_create(&workers[i], NULL, sortCoindicenceMatrixHelper, 
+                                                  &sortInstructions[i]);
+    for(size_t i = 0; i < numCPUs; i++)
+      pthread_join(workers[i], (void**) &toIgnore);
+      
+    free(workers);
+  }else{
+    sortCoindicenceMatrixHelper((void*) sortInstructions);
+  }
+  
+  free(sortInstructions);
+  
+  cerr << "Calculating statistics" << endl;
 
+  sigma = 0;
+  sum = 0;
+  clen = n * actualNumEdges * 2;
+  
+  
+  for(size_t i = 0; i < n; i++)
+    for(size_t j = 0; j < actualNumEdges-1; j++)
+      sum += sortedCoincidenceMatrix[i][j].first;
+  sum += (n * settings.keepTopN);
+  
+  cf64 avg = sum / ((f64) clen);
+  
+  for(size_t i = 0; i < n; i++){
+    for(size_t j = 0; j < actualNumEdges-1; j++){
+      cf64 tmp = sortedCoincidenceMatrix[i][j].first - avg;
+      sigma += (tmp * tmp);
+    }
+  }
+  sigma += (n * (settings.keepTopN * settings.keepTopN));
+  sigma = sqrt(sigma / ((f64)clen -1));
 
+  cerr << "avg:\t" << avg << endl;
+  cerr << "clen:\t" << clen << endl;
+  cerr << "std:\t" << sigma << endl;
+  
+  //now change the sigma levels accordingly so that the storing matrix
+  //for data can stay as 1-byte storage, not 8-byte.
+  
+  settings.threeSigma = (settings.threeSigma * sigma) + avg;
+  settings.threeSigmaAdj = (u8) settings.threeSigma;
+  settings.twoSigma = (settings.twoSigma * sigma) + avg;
+  settings.twoSigmaAdj = (u8) settings.twoSigma;
+  settings.oneSigma = (settings.oneSigma * sigma) + avg;
+  settings.oneSigmaAdj = (u8) settings.oneSigma;
+  
+  cerr << "Adjusted sigmas are " << (int) settings.threeSigmaAdj << ", "
+       << (int) settings.twoSigmaAdj << ", " << (int) settings.oneSigmaAdj << endl;
+  
+  //*/
 
   //now prepare the graph for all the data it is about to recieve, else
   //after the fact memory allocations can take minutes.
   cerr << "constructing graph" << endl;
-  tr = new graph<geneData, f64>();
+  tr = new graph<geneData, u8>();
 
   tr->hintNumVertexes(protoGraph.numRows());
   tr->hintNumEdges(protoGraph.numRows() * actualNumEdges);
@@ -432,38 +491,32 @@ graph<geneData, f64>* constructGraph(const CMF &protoGraph,
     tr->addVertex(geneData(i))->hintNumEdges(actualNumEdges);
 
   for(size_t i = 0; i < protoGraph.numRows(); i++){
-    vertex<geneData, double> *left = tr->getVertexForValue(geneData(i));
-    for(size_t j = i+1; j < protoGraph.numRows(); j++){
-      f64 weight = coincidenceMatrix[XYToW(j, i, n)];
-      if(weight > 0){
-        vertex<geneData, double> *right = tr->getVertexForValue(geneData(j));
-        tr->addEdge(left, right, weight);
+    vertex<geneData, u8> *left = tr->getVertexForValue(geneData(i));
+    for(size_t j = 0; j < actualNumEdges; j++){
+      u8 weight = sortedCoincidenceMatrix[i][j].first;
+      if(weight >= settings.oneSigmaAdj){
+        vertex<geneData, u8> *right;
+        right = tr->getVertexForValue(geneData(sortedCoincidenceMatrix[i][j].second));
+        if(false == left->areConnected(right))
+          tr->addEdge(left, right, weight);
       }
     }
   }
 
-  for(size_t i = 0; i < protoGraph.numRows(); i++)
-    tr->getVertexForValue(geneData(i))->shrinkToFit();
-  
-  
-  f64 sum = 0, nonZeroCount = 0;
-  for(size_t i = 0; i < UDMSize; i++)
-    if(0.0 != coincidenceMatrix[i]){
-      sum += coincidenceMatrix[i];
-      nonZeroCount++;
-    }
 
-  sigma = 0;
-  sum = 0;
   
-  for(size_t i = 0; i < tr->getNumEdges(); i++){
-    sum += tr->getEdges()[i]->weight;
-  }
+  //for(size_t i = 0; i < tr->getNumEdges(); i++)
+  //  if(tr->getEdges()[i]->weight != 0.0)
+  //    clen++;
+  /*
+  clen = tr->getNumEdges();
+  if(protoGraph.numRows() * 
   
-  cf64 avg = sum / tr->getNumEdges();
+  for(size_t i = 0; i < tr->getNumEdges(); i++)
+    sum += abs(tr->getEdges()[i]->weight);
+  
+  cf64 avg = sum / clen;
 
-  cerr << "avg: " << avg << endl;
-  cerr << "clen: " << tr->getNumEdges() << endl;
   
   for(size_t i = 0; i < tr->getNumEdges(); i++)
     tr->getEdges()[i]->weight -= avg;
@@ -473,11 +526,15 @@ graph<geneData, f64>* constructGraph(const CMF &protoGraph,
     sigma += (tmp * tmp);
   }
 
-  sigma = sqrt(sigma / (tr->getNumEdges() -1));
-  cerr << "std: " << sigma << endl;
+  sigma = sqrt(sigma / (clen -1));
   
   for(size_t i = 0; i < tr->getNumEdges(); i++)
     tr->getEdges()[i]->weight /= sigma;
+    
+  cerr << "clen: " << clen << endl;
+  cerr << "avg: " << avg << endl;
+  cerr << "std: " << sigma << endl;
+  
   
   for(size_t i = 0; i < tr->getNumEdges(); i++){
     edge<geneData, f64> *test = tr->getEdges()[i];
@@ -486,6 +543,10 @@ graph<geneData, f64>* constructGraph(const CMF &protoGraph,
       i = 0;
     }
   }
+
+  for(size_t i = 0; i < protoGraph.numRows(); i++)
+    tr->getVertexForValue(geneData(i))->shrinkToFit();
+  //*/
 
   return tr;
 }
@@ -672,6 +733,31 @@ void inPlaceAbsoluteValue(f64 *array, csize_t size){
   for(size_t i = 0; i < size; i++)
     if(0 > array[i])
       array[i] = (-1.0) * array[i];
+}
+
+
+pair<u8, size_t>* countingSortHighToLow(pair<u8, size_t> *toSort, 
+                                                            csize_t n){
+  size_t counts[256];
+  pair<u8, size_t> *sortSpace;
+  void *tmpPtr;
+  
+  memset(counts, 0, sizeof(counts));
+  
+  tmpPtr = malloc(sizeof(*sortSpace) * n);
+  sortSpace = (pair<u8, size_t>*) tmpPtr;
+  
+  for(size_t i = 0; i < n; i++)
+    counts[toSort[i].first]++;
+  for(int i = 255-1; i >= 0; i--)
+    counts[i] += counts[i+1];
+  
+  for(size_t i = n-1; i != ((size_t)0)-1; i--){
+    counts[toSort[i].first]--;
+    sortSpace[counts[toSort[i].first]] = toSort[i];
+  }
+  
+  return sortSpace;
 }
 
 ////////////////////////////////////////////////////////////////////////
