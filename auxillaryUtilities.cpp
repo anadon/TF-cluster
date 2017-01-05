@@ -27,6 +27,7 @@
 #include <utility>
 
 #include "auxillaryUtilities.hpp"
+#include "diagnostics.hpp"
 #include "edge.t.hpp"
 #include "graph.t.hpp"
 #include "statistics.h"
@@ -57,24 +58,52 @@ struct quickMergeDoubleSizeTPair_recurse_struct{
 };
 
 
-struct constructGraphHelperStruct{
+struct multithreadLoad{
   size_t numerator;
   size_t denominator;
+  void *specifics;
+};
+
+
+struct constructGraphHelperStruct{
   size_t numRows;
   size_t numCols;
   cf64 **fullMatrix;
   pair<f64, size_t> **intermediateGraph;
-  u8 maxNumEdges;
+};
+
+
+struct constructSCCMHelperStruct{
+  u8 numEdges;
+  pair<f64, size_t> **intermediateGraph;
+  unordered_map<size_t, bool> *hashChecks;
+  pthread_mutex_t *rowLocks;
+  UpperDiagonalSquareMatrix<u8> *coincidenceMatrix;
+};
+
+
+/*******************************************************************//**
+ *  Struct to ease parameter passing from addTopEdges() to
+ * addTopEdgesHelper()
+ **********************************************************************/
+struct addTopEdgesHelperStruct{
+  struct correlationMatrix *protoGraph;
+  u8 keepTopN;
+  size_t startIndex;
+  size_t endIndex;
+};
+
+
+//TODO
+struct sortCoindicenceMatrixHelperStruct{
+  UpperDiagonalSquareMatrix<u8> *coindicenceMatrix;
+  size_t n;
+  pair<u8, size_t>** sortedCoincidenceMatrix;
 };
 
 ////////////////////////////////////////////////////////////////////////
 //PRIVATE FUNCTION DECLARATIONS/////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////
-
-/*******************************************************************//**
- * verify parsed input as complete and valid
- **********************************************************************/
-int verifyInput(const struct config settings);
 
 
 /*******************************************************************//**
@@ -99,72 +128,23 @@ void sortDoubleSizeTPairHighToLowHelper(pair<f64, size_t> *toSort,
 void *constructGraph(void *arg);
 
 
-//TODO: add doc
-size_t XYToW(csize_t &x, csize_t &y, size_t n);
-
-
-//TODO: add doc
-
+/*******************************************************************//**
+ * Sorts toSort based on the values in toSort[x].first() in linear time.
+ **********************************************************************/
 pair<u8, size_t>* countingSortHighToLow(pair<u8, size_t> *toSort, 
                                                             csize_t n);
 
-////////////////////////////////////////////////////////////////////////
-//FUNCTION DEFINITIONS//////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////
 
-int verifyInput(const struct config settings){
-  if(NULL == settings.tflist){
-    cerr << "file path to transcription factor names not given" << endl;
-    return EINVAL;
-  }
-  if(NULL == settings.exprData){
-    cerr << "file path to expression data not given" << endl;
-    return EINVAL;
-  }
-  if(NULL == settings.corrMethod){
-    cerr << "correlation calculation method not given" << endl;
-    return EINVAL;
-  }
-  if(0.0  == settings.threeSigma){
-    cerr << "triple link 1 not set" << endl;
-    return EINVAL;
-  }
-  if(0.0  == settings.twoSigma){
-    cerr << "triple link 2 not set" << endl;
-    return EINVAL;
-  }
-  if(0.0  == settings.oneSigma){
-    cerr << "triple link 3 not set" << endl;
-    return EINVAL;
-  }
-  if(settings.threeSigma <= settings.twoSigma){
-    cerr << "triple link 1 is less than or equal to triple link 2" << endl;
-    return EINVAL;
-  }
-  if(settings.twoSigma <= settings.oneSigma){
-    cerr << "triple link 2 is less than or equal triple link 1" << endl;
-    return EINVAL;
-  }
-  if(0    == settings.keepTopN){
-    cerr << "number of top links to keep is not set" << endl;
-    return EINVAL;
-  }
-  
-  return 0;
-}
+/***********************************************************************
+ * TODO
+ * ********************************************************************/
+void *constructPreSCCMHelper(void *arg);
 
 
-void printClusters(queue< queue<size_t> > clusters,
-                                            const vector<string> &TFs){
-  for(size_t i = 0; !clusters.empty(); i++){
-    cout << "cluster: " << (i+1) << endl;
-    while(!clusters.front().empty()){
-      cout << TFs[clusters.front().front()] << endl;
-      clusters.front().pop();
-    }
-    clusters.pop();
-  }
-}
+/***********************************************************************
+ * TODO
+ * ********************************************************************/
+void *constructSCCMHelper(void *arg);
 
 
 /***********************************************************************
@@ -172,66 +152,153 @@ void printClusters(queue< queue<size_t> > clusters,
  * name and its correlation coefficient sorted from highest correlation
  * to lowest correlation.
  * ********************************************************************/
-void *constructGraphHelper(void *arg){
+void *sortCoindicenceMatrixHelper(void *arg);
+
+
+/***********************************************************************
+ * 
+ * ********************************************************************/
+void autoThreadLauncher(void* (*func)(void*), void *sharedArgs);
+
+
+////////////////////////////////////////////////////////////////////////
+//FUNCTION DEFINITIONS//////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////
+
+
+void autoThreadLauncher(void* (*func)(void*), void *sharedArgs){
+  void *tmpPtr;
+  
+  csize_t numCPUs = thread::hardware_concurrency();
+  //csize_t numCPUs = 1;
+  
+  
+  struct multithreadLoad *instructions;
+  tmpPtr = malloc(sizeof(*instructions) * numCPUs);
+  instructions = (struct multithreadLoad*) tmpPtr;
+  
+  for(size_t i = 0; i < numCPUs; i++){
+    instructions[i] = {i, numCPUs, sharedArgs};
+  }
+  
+  if(numCPUs < 2){
+    func((void*) instructions);
+  }else{
+    int *toIgnore;
+    pthread_t *workers;
+    
+    tmpPtr = malloc(sizeof(*workers) * numCPUs);
+    workers = (pthread_t*) tmpPtr;
+  
+    for(size_t i = 0; i < numCPUs; i++)
+      pthread_create(&workers[i], NULL, func, (void*) &instructions[i]);
+      
+    for(size_t i = 0; i < numCPUs; i++)
+      pthread_join(workers[i], (void**) &toIgnore);
+    
+    free(workers);
+  }
+  
+  free(instructions);
+}
+
+
+void *constructPreSCCMHelper(void *arg){
+  struct multithreadLoad *argPrime = (struct multithreadLoad*) arg;
+  csize_t numerator = argPrime->numerator;
+  csize_t denominator = argPrime->denominator;
+  
   struct constructGraphHelperStruct *args =
-                              (struct constructGraphHelperStruct*) arg;
-  csize_t numerator = args->numerator;
-  csize_t denominator = args->denominator;
+              (struct constructGraphHelperStruct*) argPrime->specifics;
   csize_t numRows = args->numRows;
   csize_t numCols = args->numCols;
   cf64 **fullMatrix = args->fullMatrix;
   pair<f64, size_t> **intermediateGraph = args->intermediateGraph;
-  cu8 maxNumEdges = args->maxNumEdges;
 
-  void *tmpPtr;
 
   for(size_t i = (numerator * numRows) / denominator;
                     i < ((numerator + 1) * numRows) / denominator; i++){
-    pair<f64, size_t> *toSort;
-    size_t shrinkSize;
-
-    tmpPtr = malloc(sizeof(*toSort) * (numCols));
-    toSort = (pair<f64, size_t>*) tmpPtr;
 
     for(size_t j = 0; j < numCols; j++)
-      toSort[j] = pair<f64, size_t>(fullMatrix[i][j], j);
+      intermediateGraph[i][j] = pair<f64, size_t>(fullMatrix[i][j], j);
 
-
-    if(numCols < maxNumEdges){
-      shrinkSize = numCols;
-    }else{
-      shrinkSize = maxNumEdges;
-      sortDoubleSizeTPairHighToLow(toSort, numCols);
-      tmpPtr = realloc(toSort, sizeof(*toSort) * shrinkSize);
-      toSort = (pair<f64, size_t>*) tmpPtr;
-    }
-
-    intermediateGraph[i] = toSort;
+    sortDoubleSizeTPairHighToLow(intermediateGraph[i], numCols);
   }
 
   return NULL;
 }
 
 
-/***********************************************************************
- * Returns for each TF an array of pairs containing an index to the gene
- * name and its correlation coefficient sorted from highest correlation
- * to lowest correlation.
- * ********************************************************************/
-void *sortCoindicenceMatrixHelper(void *arg){
+void *constructSCCMHelper(void *arg){
+  struct multithreadLoad *argPrime = (struct multithreadLoad*) arg;
+  csize_t numerator = argPrime->numerator;
+  csize_t denominator = argPrime->denominator;
+  
+  
+  struct constructSCCMHelperStruct *args =
+                (struct constructSCCMHelperStruct*) argPrime->specifics;
+  cu8 numEdges = args->numEdges;
+  pair<f64, size_t> **intermediateGraph = args->intermediateGraph;
+  unordered_map<size_t, bool> *hashChecks = args->hashChecks;
+  pthread_mutex_t *rowLocks = args->rowLocks;
+  UpperDiagonalSquareMatrix<u8> *coincidenceMatrix = 
+                                                args->coincidenceMatrix;
+  
+  
+  csize_t itrStart = (numerator * 
+              (coincidenceMatrix->numberOfElements()-1) ) / denominator;
+  csize_t itrEnd = ((numerator + 1) * 
+              (coincidenceMatrix->numberOfElements()-1) ) / denominator;
+  
+  const pair<size_t, size_t> startCoord = 
+                                    coincidenceMatrix->WToXY(itrStart);
+  const pair<size_t, size_t> endCoord = 
+                                      coincidenceMatrix->WToXY(itrEnd);
+  csize_t xStart = startCoord.first;
+  csize_t yStart = startCoord.second;
+  csize_t xEnd = endCoord.first;
+  csize_t yEnd = endCoord.second;
+  csize_t n = coincidenceMatrix->getSideLength();
+
+  size_t j = xStart;
+  for(size_t i = yStart; i <= yEnd; i++){
+    for(; (j < n && i < yEnd) || j < xEnd; j++){
+      for(size_t k = 0; k < numEdges; k++){
+        csize_t target = intermediateGraph[j][k].second;
+        if(hashChecks[i].count(target)){
+          pthread_mutex_lock(&rowLocks[i]);
+          u8 *ptr = coincidenceMatrix->getReferenceForIndex(i, j);
+          (*ptr)++;
+          pthread_mutex_unlock(&rowLocks[i]);
+        }
+      }
+    }
+    j = i+2;
+  }
+
+  return NULL;
+}
+
+
+void *sortCoindicenceMatrixHelper(void *arg){  
+  struct multithreadLoad *argPrime = (struct multithreadLoad*) arg;
+  csize_t numerator = argPrime->numerator;
+  csize_t denominator = argPrime->denominator;
+  
+  
   struct sortCoindicenceMatrixHelperStruct *args =
-                        (struct sortCoindicenceMatrixHelperStruct*) arg;
-  csize_t numerator = args->numerator;
-  csize_t denominator = args->denominator;
-  cu8 *coincidenceMatrix = args->coindicenceMatrix;
+        (struct sortCoindicenceMatrixHelperStruct*) argPrime->specifics;
+  
+  
+  UpperDiagonalSquareMatrix<u8> *coincidenceMatrix = 
+                                                args->coindicenceMatrix;
   csize_t n = args->n;
-  pair<u8, size_t> **sortedCoincidenceMatrix;
-  cu8 keepTopN = args->keepTopN;
+  pair<u8, size_t> **sortedCoincidenceMatrix = 
+                                          args->sortedCoincidenceMatrix;
+  
   void *tmpPtr;
   pair<u8, size_t> *sortColumn;
-  
-  sortedCoincidenceMatrix = args->sortedCoincidenceMatrix;
-  
+
   
   tmpPtr = malloc(sizeof(**sortedCoincidenceMatrix) * (n-1));
   sortColumn = (pair<u8, size_t>*) tmpPtr;
@@ -241,21 +308,15 @@ void *sortCoindicenceMatrixHelper(void *arg){
                       itr < ((numerator + 1) * n) / denominator; itr++){
     
     
-      for(size_t j = 0; j < itr; j++){
-        pair<u8, size_t> toAdd;
-        toAdd = pair<u8, size_t>(coincidenceMatrix[XYToW(j, itr, n)], j);
-        sortColumn[j] = toAdd;
-      }
-      for(size_t j = itr+1; j < n; j++){
-        pair<u8, size_t> toAdd;
-        toAdd = pair<u8, size_t>(coincidenceMatrix[XYToW(itr, j, n)], j);
-        sortColumn[j-1] = toAdd;
-      }
+    for(size_t j = 0; j < itr; j++){
+      sortColumn[j] = pair<u8, size_t>(coincidenceMatrix->getValueAtIndex(j, itr), j);
+    }
+    for(size_t j = itr+1; j < n; j++){
+      sortColumn[j-1] = pair<u8, size_t>(coincidenceMatrix->getValueAtIndex(itr, j), j);
+    }
     
     pair<u8, size_t> *sorted;
     sorted = countingSortHighToLow(sortColumn, n-1);
-    tmpPtr = realloc(sorted, sizeof(*sorted) * keepTopN);
-    sorted = (pair<u8, size_t>*) tmpPtr;
     sortedCoincidenceMatrix[itr] = sorted;
   }
   
@@ -265,199 +326,165 @@ void *sortCoindicenceMatrixHelper(void *arg){
 }
 
 
-/* turn X, Y coordinates into a 1-D index value for a upper-diagonal
- * matrix */
-size_t XYToW(csize_t &x, csize_t &y, size_t n){
-  n--;
-  return (n*(n-1)/2) - (n-y)*((n-y)-1)/2 + x - y - 1;
-  //or? (n*(n-1)/2) - (n-i)*((n-i)-1)/2 + j - i - 1
-}
-
-
-void printCoincidenceMatrix(cf64 *matrix, csize_t width, cu8 maxMatch,
-                                              const vector<string> TFs){
-  f64 **mtr;
-  mtr = (f64**) malloc(sizeof(*mtr) * width);
-  for(size_t i = 0; i < width; i++)
-    mtr[i] = (f64*) malloc(sizeof(**mtr) * width);
-
-  for(size_t i = 0; i < width; i++){\
-    mtr[i][i] = maxMatch;
-    for(size_t j = i+1; j < width; j++){
-      mtr[i][j] = mtr[j][i] = matrix[XYToW(i, j, width)];
-    }
-  }
-
-  for(size_t i = 0; i < width; i++){
-    cout << TFs[i] << "\t";
-    for(size_t j = 0; j < width; j++){
-      cout << mtr[i][j] << "\t";
-    }
-    cout << endl;
-    free(mtr[i]);
-  }
-  free(mtr);
-  cout << endl << endl;
-}
-
-
-graph<geneData, u8>* constructGraph(const CMF &protoGraph,
+UpperDiagonalSquareMatrix<u8>* constructCoincidenceMatrix(const CMF &protoGraph,
                                                 struct config &settings){
-  graph<geneData, u8>* tr;
+
   void *tmpPtr;
   pair<f64, size_t> **intermediateGraph;
-  pthread_t *workers;
-  struct constructGraphHelperStruct *instructions;
-  int *toIgnore;
-  //f64 *coincidenceMatrix; //This can't represent the data in a close 
-  //enough way to the originalities nuances.  Keep note here for legacy.
-  u8 *coincidenceMatrix;
-  pair<u8, size_t> **sortedCoincidenceMatrix;
-  f64 sigma;
-  size_t clen, sum;
-  struct sortCoindicenceMatrixHelperStruct *sortInstructions;
+  UpperDiagonalSquareMatrix<u8> *coincidenceMatrix;
   
 
   /*This is setting up for a general multithreading job dispatch*/
   csize_t n = protoGraph.numRows();
-  cu8 actualNumEdges = (u8) settings.keepTopN < protoGraph.numCols() ?
-                              settings.keepTopN : protoGraph.numCols();
-  csize_t numCPUs = thread::hardware_concurrency() < n-1 ?
-                    thread::hardware_concurrency() : n-1 ;
-  //csize_t numCPUs = 1;
-
-  csize_t UDMSize = (n * (n-1) / 2) -1;
+  
+  cu8 actualNumEdges = settings.keepTopN;
 
   cerr << "allocating preliminary memory" << endl;
 
   tmpPtr = malloc(sizeof(*intermediateGraph) * n);
   intermediateGraph = (pair<f64, size_t>**) tmpPtr;
-  tmpPtr = malloc(sizeof(*workers) * numCPUs);
-  workers = (pthread_t*) tmpPtr;
-  tmpPtr = malloc(sizeof(*instructions) * numCPUs);
-  instructions = (struct constructGraphHelperStruct*) tmpPtr;
+  for(size_t i = 0; i < n; i++){
+    tmpPtr = malloc(sizeof(**intermediateGraph) * protoGraph.numCols());
+    intermediateGraph[i] = (pair<f64, size_t>*) tmpPtr;
+    memset(intermediateGraph[i], 0, sizeof(**intermediateGraph) * protoGraph.numCols());
+  }
 
-  /*Setting up directions for each thread*/
-  for(size_t i = 0; i < numCPUs; i++){
-    instructions[i] = {
-      i,
-      numCPUs,
-      protoGraph.numRows(),
+  struct constructGraphHelperStruct preSCCMInstr;
+  preSCCMInstr = {
+      protoGraph.numRows(), 
       protoGraph.numCols(),
-      (cf64**) protoGraph.fullMatrix,
-      intermediateGraph,
-      actualNumEdges
+      (cf64**) protoGraph.fullMatrix, 
+      intermediateGraph
     };
-  }
 
-  cerr << "sorting edges" << endl;
-  /*See constructGraphHelper() for the results*/
-  if(numCPUs > 1){
-    for(size_t i = 0; i < numCPUs; i++)
-      pthread_create(&workers[i], NULL, constructGraphHelper,
-                                                      &instructions[i]);
-    for(size_t i = 0; i < numCPUs; i++)
-      pthread_join(workers[i], (void**) &toIgnore);
-  }else{
-    constructGraphHelper((void*) instructions);
-  }
-
-  free(workers);
-  free(instructions);
+  autoThreadLauncher(constructPreSCCMHelper, (void*) &preSCCMInstr);
+  
 
   //Don't need the very large UDMatrix in protoGraph; free it.
   for(size_t i = 0; i < protoGraph.numRows(); i++)
     free(protoGraph.fullMatrix[i]);
   free(protoGraph.fullMatrix);
 
-  cerr << "constructing coincidence matrix" << endl;
+  for(size_t i = 0; i < n; i++){
+    size_t allocSize = sizeof(**intermediateGraph) * actualNumEdges;
+    tmpPtr = realloc(intermediateGraph[i], allocSize);
+    intermediateGraph[i] = (pair<f64, size_t>*) tmpPtr;
+  }
 
-  /*The coincidence matrix logic is best detailed in the paper*/
-  //TODO: detail coincidence matrix here
-
-  vector<bool> checks[protoGraph.numRows()];
-
-  for(size_t i = 0; i < protoGraph.numRows(); i++)
-    checks[i] = vector<bool>(protoGraph.numCols(), false);
-
-  for(size_t i = 0; i < protoGraph.numRows(); i++)
-    for(size_t j = 0; j < actualNumEdges; j++)
-      checks[i][intermediateGraph[i][j].second] = true;
-
-  tmpPtr = calloc(sizeof(*coincidenceMatrix), UDMSize);
-  coincidenceMatrix = (u8*) tmpPtr;
-
-  for(size_t i = 0; i < protoGraph.numRows(); i++)
-    for(size_t j = i+1; j < protoGraph.numRows(); j++)
-      for(size_t k = 0; k < actualNumEdges; k++)
-        if(checks[i][intermediateGraph[j][k].second])
-          coincidenceMatrix[XYToW(j, i, n)]++;
+  cerr << "allocating coincidence matrix" << endl;
+  /*The coincidence matrix logic is best detailed in the paper*/  
   
-  //printCoincidenceMatrix(coincidenceMatrix, n, actualNumEdges, 
-  //                                                protoGraph.TFLabels);
+  unordered_map<size_t, bool> *hashChecks;
+  hashChecks = new unordered_map<size_t, bool>[n];
 
-  for(size_t i = 0; i < protoGraph.numRows(); i++)
-    checks[i].clear();
+  for(size_t i = 0; i < n; i++){
+    hashChecks[i].max_load_factor(0.5);
+    hashChecks[i].reserve(actualNumEdges);
+    for(size_t j = 0; j < actualNumEdges; j++){
+      size_t target = intermediateGraph[i][j].second;
+      pair<size_t, bool> toInsert(target, true);
+      hashChecks[i].insert(toInsert);
+    }
+  }
+
+  coincidenceMatrix = new UpperDiagonalSquareMatrix<u8>(n);
+  coincidenceMatrix->zeroData();
+
+  cerr << "constructing coincidence matrix" << endl;
+  
+  pthread_mutex_t *rowLocks;
+  tmpPtr = malloc(sizeof(*rowLocks) * n);
+  rowLocks = (pthread_mutex_t*) tmpPtr;
+  for(size_t i = 0; i < n; i++){
+    pthread_mutex_init(&rowLocks[i], NULL);
+  };
+  
+  struct constructSCCMHelperStruct SCCMInstr;
+  SCCMInstr = {
+    actualNumEdges,
+    intermediateGraph,
+    hashChecks,
+    rowLocks,
+    coincidenceMatrix
+  };
+  
+  autoThreadLauncher(constructSCCMHelper, (void*) &SCCMInstr);
+      
+  delete[] hashChecks;
+  for(size_t i = 0; i < n; i++){
+    pthread_mutex_destroy(&rowLocks[i]);
+  };
+  free(rowLocks);
+  
+  for(size_t i = 0; i < n; i++)
+    free(intermediateGraph[i]);
+  free(intermediateGraph);
+  
+  return coincidenceMatrix;
+}
+
+
+graph<geneData, u8>* constructGraph(UpperDiagonalSquareMatrix<u8> *SCCM,
+                        const CMF &protoGraph, struct config &settings){
+  graph<geneData, u8>* tr;
+  void *tmpPtr;
+  pthread_t *workers;
+  int *toIgnore;
+  pair<u8, size_t> **sortedCoincidenceMatrix;
+  f64 sigma;
+  size_t clen, sum;
+  struct sortCoindicenceMatrixHelperStruct sortInstructions;
+  
+  csize_t n = protoGraph.numRows();
+  
+  cu8 actualNumEdges = (u8) settings.keepTopN;
+  csize_t numCPUs = thread::hardware_concurrency();
+  
   
   //Now the coincidence matrix needs to be sorted again in order to only
   //add the top keepN entries into the graph for consideration.
   
   cerr << "Sorting coincidence matrix" << endl;
   
-  tmpPtr = malloc(sizeof(*sortInstructions) * numCPUs);
-  sortInstructions = (struct sortCoindicenceMatrixHelperStruct*) tmpPtr;
   tmpPtr = malloc(sizeof(*sortedCoincidenceMatrix) * n);
   sortedCoincidenceMatrix = (pair<u8, size_t>**) tmpPtr;
   
-  for(size_t i = 0; i <numCPUs; i++){
-    sortInstructions[i] = {
-      i,
-      numCPUs,
-      coincidenceMatrix,
-      n,
-      sortedCoincidenceMatrix,
-      actualNumEdges
+  sortInstructions = {
+      SCCM, 
+      n, 
+      sortedCoincidenceMatrix
     };
+  
+  autoThreadLauncher(sortCoindicenceMatrixHelper, 
+                                            (void*) &sortInstructions);
+ 
+  
+  for(size_t i = 0; i < n; i++){
+    tmpPtr = realloc(sortedCoincidenceMatrix[i], 
+                    actualNumEdges * sizeof(**sortedCoincidenceMatrix));
+    sortedCoincidenceMatrix[i] = (pair<u8, size_t>*) tmpPtr;
   }
   
-  if(numCPUs > 1){
-    tmpPtr = malloc(sizeof(*workers) * numCPUs);
-    workers = (pthread_t*) tmpPtr;
-  
-    for(size_t i = 0; i < numCPUs; i++)
-      pthread_create(&workers[i], NULL, sortCoindicenceMatrixHelper, 
-                                                  &sortInstructions[i]);
-    for(size_t i = 0; i < numCPUs; i++)
-      pthread_join(workers[i], (void**) &toIgnore);
-      
-    free(workers);
-  }else{
-    sortCoindicenceMatrixHelper((void*) sortInstructions);
-  }
-  
-  free(sortInstructions);
   
   cerr << "Calculating statistics" << endl;
 
   sigma = 0;
   sum = 0;
-  clen = n * actualNumEdges * 2;
+  clen = n * actualNumEdges;
   
   
   for(size_t i = 0; i < n; i++)
-    for(size_t j = 0; j < actualNumEdges-1; j++)
+    for(size_t j = 0; j < actualNumEdges; j++)
       sum += sortedCoincidenceMatrix[i][j].first;
-  sum += (n * settings.keepTopN);
   
   cf64 avg = sum / ((f64) clen);
   
   for(size_t i = 0; i < n; i++){
-    for(size_t j = 0; j < actualNumEdges-1; j++){
+    for(size_t j = 0; j < actualNumEdges; j++){
       cf64 tmp = sortedCoincidenceMatrix[i][j].first - avg;
       sigma += (tmp * tmp);
     }
   }
-  sigma += (n * (settings.keepTopN * settings.keepTopN));
   sigma = sqrt(sigma / ((f64)clen -1));
 
   cerr << "avg:\t" << avg << endl;
@@ -468,16 +495,16 @@ graph<geneData, u8>* constructGraph(const CMF &protoGraph,
   //for data can stay as 1-byte storage, not 8-byte.
   
   settings.threeSigma = (settings.threeSigma * sigma) + avg;
-  settings.threeSigmaAdj = (u8) settings.threeSigma;
+  settings.threeSigmaAdj = (u8) ceil(settings.threeSigma);
   settings.twoSigma = (settings.twoSigma * sigma) + avg;
-  settings.twoSigmaAdj = (u8) settings.twoSigma;
+  settings.twoSigmaAdj = (u8) ceil(settings.twoSigma);
   settings.oneSigma = (settings.oneSigma * sigma) + avg;
-  settings.oneSigmaAdj = (u8) settings.oneSigma;
+  settings.oneSigmaAdj = (u8) ceil(settings.oneSigma);
   
   cerr << "Adjusted sigmas are " << (int) settings.threeSigmaAdj << ", "
-       << (int) settings.twoSigmaAdj << ", " << (int) settings.oneSigmaAdj << endl;
-  
-  //*/
+       << (int) settings.twoSigmaAdj << ", " 
+       << (int) settings.oneSigmaAdj << endl;
+
 
   //now prepare the graph for all the data it is about to recieve, else
   //after the fact memory allocations can take minutes.
@@ -503,50 +530,12 @@ graph<geneData, u8>* constructGraph(const CMF &protoGraph,
     }
   }
 
-
-  
-  //for(size_t i = 0; i < tr->getNumEdges(); i++)
-  //  if(tr->getEdges()[i]->weight != 0.0)
-  //    clen++;
-  /*
-  clen = tr->getNumEdges();
-  if(protoGraph.numRows() * 
-  
-  for(size_t i = 0; i < tr->getNumEdges(); i++)
-    sum += abs(tr->getEdges()[i]->weight);
-  
-  cf64 avg = sum / clen;
-
-  
-  for(size_t i = 0; i < tr->getNumEdges(); i++)
-    tr->getEdges()[i]->weight -= avg;
-  
-  for(size_t i = 0; i < tr->getNumEdges(); i++){
-    cf64 tmp = tr->getEdges()[i]->weight;
-    sigma += (tmp * tmp);
+  for(size_t i = 0; i < n; i++){
+    free(sortedCoincidenceMatrix[i]);
   }
-
-  sigma = sqrt(sigma / (clen -1));
+  free(sortedCoincidenceMatrix);
   
-  for(size_t i = 0; i < tr->getNumEdges(); i++)
-    tr->getEdges()[i]->weight /= sigma;
-    
-  cerr << "clen: " << clen << endl;
-  cerr << "avg: " << avg << endl;
-  cerr << "std: " << sigma << endl;
-  
-  
-  for(size_t i = 0; i < tr->getNumEdges(); i++){
-    edge<geneData, f64> *test = tr->getEdges()[i];
-    if(oneSigma > test->weight){
-      tr->removeEdge(test);
-      i = 0;
-    }
-  }
-
-  for(size_t i = 0; i < protoGraph.numRows(); i++)
-    tr->getVertexForValue(geneData(i))->shrinkToFit();
-  //*/
+  tr->shrinkToFit();
 
   return tr;
 }
@@ -700,8 +689,8 @@ void sortDoubleSizeTPairLowToHigh(pair<f64, size_t> *toSort,
     IOISize = NIOISize;
   }
 
-  delete indiciesOfInterest;
-  delete newIndiciesOfInterest;
+  delete[] indiciesOfInterest;
+  delete[] newIndiciesOfInterest;
   free(sortSpace);
 
 }

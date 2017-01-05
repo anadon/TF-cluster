@@ -53,6 +53,8 @@ cluster N:
 The settings file is no longer used, instead using command line 
 arguments.
 
+All input files expect UNIX standard line terminators.
+
 The expression file used to generate the correlation matrix follows the
 format below:
 ```

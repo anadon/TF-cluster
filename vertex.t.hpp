@@ -95,17 +95,16 @@ template <typename T, typename U> void vertex<T, U>::removeEdge(
 
   //deallocate the last edge pointer (but don't actually delete --
   //that's the network's job).
-  memCheck = realloc(edges, numEdges * sizeof(*edges));
-  edges = (edge<T, U>**) memCheck;
+  if(0 < numEdges){
+    memCheck = realloc(edges, numEdges * sizeof(*edges));
+    edges = (edge<T, U>**) memCheck;
+  }else{
+    free(edges);
+    edges = NULL;
+  }
+  edgesSize = numEdges;
   
   connected.erase(toRemove->other(this));
-}
-
-
-template <typename T, typename U> void vertex<T, U>::clear(){
-  free(edges);
-  edges = (edge<T, U>**) NULL;
-  numEdges = 0;
 }
 
 

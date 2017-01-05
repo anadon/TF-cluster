@@ -25,9 +25,9 @@
 #include <utility>
 
 #include "correlation-matrix.hpp"
-
 #include "geneData.hpp"
 #include "graph.hpp"
+#include "upper-diagonal-square-matrix.t.hpp"
 
 ////////////////////////////////////////////////////////////////////////
 //NAMESPACE USING///////////////////////////////////////////////////////
@@ -69,66 +69,10 @@ struct config{
 };
 
 
-/*******************************************************************//**
- *  Struct to ease parameter passing from addTopEdges() to
- * addTopEdgesHelper()
- **********************************************************************/
-struct addTopEdgesHelperStruct{
-  struct correlationMatrix *protoGraph;
-  u8 keepTopN;
-  size_t startIndex;
-  size_t endIndex;
-};
-
-
-//TODO
-struct sortCoindicenceMatrixHelperStruct{
-  size_t numerator;
-  size_t denominator;
-  u8 *coindicenceMatrix;
-  size_t n;
-  pair<u8, size_t>** sortedCoincidenceMatrix;
-  u8 keepTopN;
-};
-
-
 ////////////////////////////////////////////////////////////////////////
 //PUBLIC/ FUNCTION DECLARATIONS/////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////
 
-/*******************************************************************//**
- *  Verify passed arguments are valid
- **********************************************************************/
-int verifyInput(struct config settings);
-
-
-/*******************************************************************//**
- *  Sort edges high to low in a a number of vertexes.
- *
- * @param[in,out] toPrune array of vertexes to sort their edges.
- * @param[in] size Number of vertexes in toPrune.
- **********************************************************************/
-//void quickMergeEdges(vertex<geneData, f64> *toPrune, csize_t size);
-
-
-/*******************************************************************//**
- *  Print clusters of (presumably) genes.
- *
- * @param[in] clusters Hold name indexes.
- * @param[in] names Hold the names to be printed.
- **********************************************************************/
-void printClusters(queue< queue<size_t> > clusters,
-                                          const vector<string> &names);
-
-
-/*******************************************************************//**
- * \deprecated {No longer meaningful for most uses.}
- * Print the edges and the vertexes each is connected to in a graph.
- *
- * @param[in] corrData Graph containing edges, and vertexes to be
- * printed.
- **********************************************************************/
-void printEdges(graph<geneData, f64> *corrData);
 
 
 /*******************************************************************//**
@@ -146,8 +90,13 @@ void printEdges(graph<geneData, f64> *corrData);
                           can have.
  **********************************************************************/
 //TODO: update doc
-graph<geneData, u8>* constructGraph(const CMF &protoGraph, 
+UpperDiagonalSquareMatrix<u8>* constructCoincidenceMatrix(const CMF &protoGraph, 
                                               struct config &settings);
+                                          
+
+//TODO: add doc
+graph<geneData, u8>* constructGraph(UpperDiagonalSquareMatrix<u8> *SCCM,
+                        const CMF &protoGraph, struct config &settings);
 
 
 /*******************************************************************//**

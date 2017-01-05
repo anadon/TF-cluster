@@ -48,7 +48,7 @@ template <typename T, typename U> graph<T, U>::graph(){
 
 template <typename T, typename U> graph<T, U>::~graph(){
 
-  while(numEdges)  removeEdge(edgeArray[numEdges-1]);
+  //while(numEdges)  removeEdge(edgeArray[numEdges-1]);
 
   while(numVertexes) removeVertex(vertexArray[numVertexes-1]);
 
@@ -70,9 +70,13 @@ template <typename T, typename U> U graph<T, U>::removeEdge(
   edgeArray[numEdges]->edgeID = edgeIndex;
   delete edgeArray[edgeIndex];
   edgeArray[edgeIndex] = edgeArray[numEdges];
-
-  memCheck = realloc(edgeArray, sizeof(*edgeArray) * numEdges);
-  edgeArray = (edge<T, U>**) memCheck;
+  if(0 < numEdges){
+    memCheck = realloc(edgeArray, sizeof(*edgeArray) * numEdges);
+    edgeArray = (edge<T, U>**) memCheck;
+  }else{
+    free(edgeArray);
+    edgeArray = NULL;
+  }
 
   return tr;
 }
@@ -89,7 +93,7 @@ template <typename T, typename U> T graph<T, U>::removeVertex(
   if(NULL == toRemove)  raise(SIGABRT);
   if(nodeIndex >= numVertexes)  raise(SIGABRT);
   if(toRemove != target)  raise(SIGABRT);
-
+  
   while(target->getNumEdges())
     removeEdge(target->getEdges()[target->getNumEdges()-1]);
 
@@ -193,7 +197,7 @@ template <typename T, typename U> vertex<T, U>*
 }
 
 
-template <typename T, typename U> graph<T, U>& graph<T, U>::operator=(
+template <typename T, typename U> graph<T, U> graph<T, U>::operator=(
                                               const graph<T, U> &other){
 
   raise(SIGABRT);

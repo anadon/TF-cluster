@@ -25,13 +25,15 @@ Input: 1 file name or input from stdin.
 #include <stdio.h>
 #include <vector>
 
-#include "correlation-matrix.hpp"//Make this more formally external
 
 #include "auxillaryUtilities.hpp"
+#include "correlation-matrix.hpp"
+#include "diagnostics.hpp"
 #include "edge.t.hpp"
 #include "vertex.t.hpp"
 #include "graph.t.hpp"
 #include "tripleLink.hpp"
+#include "upper-diagonal-square-matrix.t.hpp"
 
 ////////////////////////////////////////////////////////////////////////
 //NAMESPACE USING///////////////////////////////////////////////////////
@@ -132,118 +134,6 @@ static struct argp interpreter = {options, parse_opt, 0, doc, 0, 0, 0};
 
 
 ////////////////////////////////////////////////////////////////////////
-//PRIVATE FUNCTION DEFINITIONS//////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////
-
-
-//*
-void printCorrelationMatrix(const CMF &protoGraph){
-  //vector< pair<size_t, double>* > matrix;
-  //unordered_map<string, size_t> labelLookup;
-  //vector<string> labels;
-  //vector<size_t> colSize;
-  printf("\t");
-  for(size_t i = 0; i < protoGraph.GeneLabels.size();i++)
-    printf("%s\t", protoGraph.GeneLabels[i].c_str());
-
-
-  for(size_t i = 0; i < protoGraph.TFLabels.size(); i++){
-    printf("%s\t", protoGraph.TFLabels[i].c_str());
-    for(size_t j = 0; j < protoGraph.GeneLabels.size(); j++){
-      printf("%lf\t", protoGraph.fullMatrix[i][j]);
-    }
-    printf("\n");
-  }
-
-}//*/
-
-/*
-bool isProtoGraphValid(const struct correlationMatrix &protoGraph){
-  for(size_t i = 0; i < protoGraph.matrix.size(); i++){
-    for(size_t j = 0; j < protoGraph.colSize[i]; j++){
-      if(protoGraph.matrix.size() <= protoGraph.matrix[i][j].first)
-                                                           return false;
-    }
-  }
-  return true;
-}*/
-
-
-/*
-void graphvizRepresentation(graph<geneData, f64> *corrData, vector<string> labels){
-  cout << "digraph rep{" << endl;
-  cout << endl;
-  cout << "bgcolor=\"transparent\"" << endl;
-  cout << "fontcolor = black" << endl;
-  cout << endl;
-  for(size_t i = 0; i < corrData->getNumVertexes(); i++){
-    cout << labels[corrData->getVertexes()[i]->value.nameIndex] << endl;
-  }
-  
-  for(size_t i = 0; i < corrData->getNumVertexes(); i++){
-    vertex<geneData, f64> *targetV;
-    targetV = corrData->getVertexes()[i];
-    for(size_t j = 0; j < targetV->getNumEdges(); j++){
-      edge<geneData, f64> *targetE;
-      targetE = corrData->getVertexes()[i]->getEdges()[j];
-      if(targetV == targetE->left){
-        cout << labels[targetE->left->value.nameIndex] << " -> ";
-        cout << labels[targetE->right->value.nameIndex] << " ;" << endl;
-      }
-    }
-  }
-  
-  cout << "}";
-}//*/
-
-
-//*
-void printEdgeWeights(graph<geneData, u8> *corrData){
-  for(size_t i = 0; i < corrData->getNumEdges(); i++)
-    cout << (int) corrData->getEdges()[i]->weight << endl;
-}//*/
-
-
-//*
-void printProtoGraph(const CMF &toPrint){
-  for(size_t i = 0; i < toPrint.numRows(); i++){
-    for(size_t j = 0; j < toPrint.numCols(); j++){
-      fprintf(stdout, "%s\t%s\t%lf\n", toPrint.TFLabels[i].c_str(), 
-                      toPrint.GeneLabels[j].c_str(), toPrint.fullMatrix[i][j]);
-    }
-  }
-}//*/
-  
-
-
-/*******************************************************************//**
- * print graph to make sense of it's contents to stderr.  The graph is
- * printed with the vertex name on a line, followed by a pair of square
- * brackets ('[ ' ' ]')  which contain curly bracket pairs which hold
- * the name of a connected vertex followed by the edge weight.  Each of
- * these entries is followed by a blank line.
- *
- * @param[in] toPrint The graph structure to print
- * @param[in] labels
- **********************************************************************/
-//*
-void printGraph(graph<geneData, f64> *toPrint,
-                                          const vector<string> &labels){
-  for(size_t i = 0; i < toPrint->getNumVertexes(); i++){
-    for(size_t j = 0; j < toPrint->getVertexes()[i]->getNumEdges();
-                                                                  j++){
-      fprintf(stderr, "%s\t%s\t%lf\n",
-          labels[toPrint->getVertexes()[i]->value.nameIndex].c_str(),
-labels[toPrint->getVertexes()[i]->getEdges()[j]->other(toPrint->getVertexes()[i])->value.nameIndex].c_str(),
-                    toPrint->getVertexes()[i]->getEdges()[j]->weight);
-    }
-    fprintf(stderr, " ]\n\n"
-"========================================================================"
-"\n\n");
-  }
-}//*/
-
-////////////////////////////////////////////////////////////////////////
 //PUBLIC FUNCTION DEFINITIONS///////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////
 
@@ -256,16 +146,16 @@ labels[toPrint->getVertexes()[i]->getEdges()[j]->other(toPrint->getVertexes()[i]
 int main(int argc, char **argv){
   graph<geneData, u8> *corrData;
   struct config settings;
-  int error;
   queue< queue<size_t> > result;
   CMF protoGraph;
+  UpperDiagonalSquareMatrix<u8> *sccm;
 
   //parse input
   settings = config{0, 0, 0, 0.0, 0.0, 0.0, 0, 0, 0, 100};
   argp_parse(&interpreter, argc, argv, 0, 0, &settings);
-  if(0 != (error = verifyInput(settings))){
-    return error;
-  }
+  //if(0 != (error = verifyInput(settings))){
+  //  return error;
+  //}
 
   cerr << "Loading correlation matrix" << endl;
   protoGraph = generateMatrixFromFile(settings.exprData, 
@@ -283,15 +173,17 @@ int main(int argc, char **argv){
   //exit(0);
   
   
-  corrData = constructGraph(protoGraph, settings);
+  sccm = constructCoincidenceMatrix(protoGraph, settings);
+  corrData = constructGraph(sccm, protoGraph, settings);
+  delete sccm;
 
   //printEdgeWeights(corrData);
   cerr << "Performing triple link" << endl;
   result = tripleLink(corrData, settings);
 
-  printClusters(result, protoGraph.TFLabels);
-
   delete corrData;
+
+  printClusters(result, protoGraph.TFLabels);
 
   return 0;
 }

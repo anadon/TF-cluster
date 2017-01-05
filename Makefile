@@ -1,17 +1,18 @@
 CPP=g++
-CFLAGS=-ggdb -pg -O0 -pipe -Wall -Wextra -Wconversion -std=c++11 -march=native
-#CFLAGS=-O3 -pipe -Wall -Wextra -Wconversion -std=c++0x -march=native
+#CFLAGS=-ggdb -O0 -pipe -Wall -Wextra -Wconversion -std=c++11 -march=native
+CFLAGS=-O3 -pipe -Wall -Wextra -Wconversion -std=c++0x -march=native
 LIBS=-pthread
 CMTX=correlation-matrix.a
 
 EXEC=tf-cluster
 
-SOURCES=main.cpp auxillaryUtilities.cpp tripleLink.cpp geneData.cpp
-OBJECTS=main.o   auxillaryUtilities.o   tripleLink.o   geneData.o
+SOURCES=main.cpp auxillaryUtilities.cpp tripleLink.cpp geneData.cpp diagnostics.cpp
+OBJECTS=main.o   auxillaryUtilities.o   tripleLink.o   geneData.o diagnostics.o
 HEADERS=auxillaryUtilities.hpp edge.hpp geneData.hpp graph.hpp \
-        tripleLink.hpp vertex.hpp
+        tripleLink.hpp vertex.hpp diagnostics.hpp
 CMTX_INCLUDE=correlation-matrix.hpp statistics.h
-TEMPLATES=edge.t.hpp graph.t.hpp vertex.t.hpp
+TEMPLATES=edge.t.hpp graph.t.hpp vertex.t.hpp \
+					upper-diagonal-square-matrix.t.hpp
 
 all:$(EXEC)
 
@@ -30,7 +31,9 @@ $(CMTX):
 	git submodule init
 	git submodule update --remote
 	cd correlation-matrix ; make
-	mv correlation-matrix/correlation-matrix.a .
+	cp -f correlation-matrix/correlation-matrix.a .
+	cp -f correlation-matrix/correlation-matrix.o .
+	cp -f correlation-matrix/statistics.o .
 
 clean:
 	rm -f $(OBJECTS)

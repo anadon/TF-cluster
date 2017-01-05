@@ -102,12 +102,6 @@ template <typename T, typename U> class vertex{
 
 
 /*******************************************************************//**
- *  Deregister and remove all edges connected to called vertex.
- **********************************************************************/
-  void clear();
-
-
-/*******************************************************************//**
  *  Suggest number of edges to be able to store.  Use this to optimize
  * memory management.
  *

@@ -67,7 +67,7 @@ template <typename T, typename U> class graph{
 /*******************************************************************//**
  *  Copy the contents of one graph to another.
  **********************************************************************/
-  graph<T, U>& operator=(const graph<T, U> &other);
+  graph<T, U> operator=(const graph<T, U> &other);
 
 
 /*******************************************************************//**
