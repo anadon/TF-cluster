@@ -78,12 +78,10 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state){
   args = (config*) state->input;
   switch(key){
     case 't':
-      cerr << "tf-list" << " set to " << arg << endl;
       args->tflist = arg;
       break;
     case 'e':
       args->exprData = arg;
-      cerr << "expression-data" << " set to " << arg << endl;
       break;
     case 'k':
       test = atoi(arg);
@@ -92,29 +90,24 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state){
         exit(EINVAL);
       }
       args->keepTopN = (u8) test;
-      cerr << "keep" << " set to " << arg << endl;
       break;
     case '1':
       args->threeSigma = atof(arg);
-      cerr << "triple-link-1" << " set to " << arg << endl;
       if(0 >= args->threeSigma)
         exit(EINVAL);
       break;
     case '2':
       args->twoSigma = atof(arg);
-      cerr << "triple-link-2" << " set to " << arg << endl;
       if(0 >= args->twoSigma)
         exit(EINVAL);
       break;
     case '3':
       args->oneSigma = atof(arg);
-      cerr << "triple-link-3" << " set to " << arg << endl;
       if(0 >= args->oneSigma)
         exit(EINVAL);
       break;
     case 'c':
       args->corrMethod = arg;
-      cerr << "corrMethod" << " set to " << arg << endl;
       if(strcmp("pearson", arg)) break;
       if(strcmp("spearman", arg)) break;
       else{
@@ -153,11 +146,8 @@ int main(int argc, char **argv){
   //parse input
   settings = config{0, 0, 0, 0.0, 0.0, 0.0, 0, 0, 0, 100};
   argp_parse(&interpreter, argc, argv, 0, 0, &settings);
-  //if(0 != (error = verifyInput(settings))){
-  //  return error;
-  //}
 
-  cerr << "Loading correlation matrix" << endl;
+
   protoGraph = generateMatrixFromFile(settings.exprData, 
                                           settings.tflist, "spearman");
   if(NULL == protoGraph.fullMatrix){
@@ -168,17 +158,12 @@ int main(int argc, char **argv){
   if(settings.keepTopN >= protoGraph.GeneLabels.size()){
     cerr << "Too few genes to perform an analysis." << endl;
     return 0;
-  }
-  //printProtoGraph(protoGraph);
-  //exit(0);
-  
+  }  
   
   sccm = constructCoincidenceMatrix(protoGraph, settings);
   corrData = constructGraph(sccm, protoGraph, settings);
   delete sccm;
 
-  //printEdgeWeights(corrData);
-  cerr << "Performing triple link" << endl;
   result = tripleLink(corrData, settings);
 
   delete corrData;

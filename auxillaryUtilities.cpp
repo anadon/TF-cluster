@@ -339,8 +339,7 @@ UpperDiagonalSquareMatrix<u8>* constructCoincidenceMatrix(const CMF &protoGraph,
   
   cu8 actualNumEdges = settings.keepTopN;
 
-  cerr << "allocating preliminary memory" << endl;
-
+  //Allocating preliminary memory
   tmpPtr = malloc(sizeof(*intermediateGraph) * n);
   intermediateGraph = (pair<f64, size_t>**) tmpPtr;
   for(size_t i = 0; i < n; i++){
@@ -371,7 +370,7 @@ UpperDiagonalSquareMatrix<u8>* constructCoincidenceMatrix(const CMF &protoGraph,
     intermediateGraph[i] = (pair<f64, size_t>*) tmpPtr;
   }
 
-  cerr << "allocating coincidence matrix" << endl;
+  //Allocating coincidence matrix
   /*The coincidence matrix logic is best detailed in the paper*/  
   
   unordered_map<size_t, bool> *hashChecks;
@@ -390,7 +389,8 @@ UpperDiagonalSquareMatrix<u8>* constructCoincidenceMatrix(const CMF &protoGraph,
   coincidenceMatrix = new UpperDiagonalSquareMatrix<u8>(n);
   coincidenceMatrix->zeroData();
 
-  cerr << "constructing coincidence matrix" << endl;
+
+  //Constructing coincidence matrix
   
   pthread_mutex_t *rowLocks;
   tmpPtr = malloc(sizeof(*rowLocks) * n);
@@ -444,8 +444,7 @@ graph<geneData, u8>* constructGraph(UpperDiagonalSquareMatrix<u8> *SCCM,
   //Now the coincidence matrix needs to be sorted again in order to only
   //add the top keepN entries into the graph for consideration.
   
-  cerr << "Sorting coincidence matrix" << endl;
-  
+  //Sorting coincidence matrix
   tmpPtr = malloc(sizeof(*sortedCoincidenceMatrix) * n);
   sortedCoincidenceMatrix = (pair<u8, size_t>**) tmpPtr;
   
@@ -466,8 +465,7 @@ graph<geneData, u8>* constructGraph(UpperDiagonalSquareMatrix<u8> *SCCM,
   }
   
   
-  cerr << "Calculating statistics" << endl;
-
+  //Calculating statistics
   sigma = 0;
   sum = 0;
   clen = n * actualNumEdges;
@@ -501,14 +499,13 @@ graph<geneData, u8>* constructGraph(UpperDiagonalSquareMatrix<u8> *SCCM,
   settings.oneSigma = (settings.oneSigma * sigma) + avg;
   settings.oneSigmaAdj = (u8) ceil(settings.oneSigma);
   
-  cerr << "Adjusted sigmas are " << (int) settings.threeSigmaAdj << ", "
-       << (int) settings.twoSigmaAdj << ", " 
-       << (int) settings.oneSigmaAdj << endl;
+  //cerr << "Adjusted sigmas are " << (int) settings.threeSigmaAdj << ", "
+  //     << (int) settings.twoSigmaAdj << ", " 
+  //     << (int) settings.oneSigmaAdj << endl;
 
 
   //now prepare the graph for all the data it is about to recieve, else
   //after the fact memory allocations can take minutes.
-  cerr << "constructing graph" << endl;
   tr = new graph<geneData, u8>();
 
   tr->hintNumVertexes(protoGraph.numRows());
