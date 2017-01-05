@@ -6,3 +6,4 @@ triple-link-pthread
 correlation-matrix.*
 gmon.out
 statistics.h
+*.ods
