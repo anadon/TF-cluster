@@ -1,29 +1,30 @@
+/*Copyright 2016-2017 Josh Marshall************************************/
 
-/*******************************************************************//**
-         FILE:  auxillaryUtilities.cpp
+/***********************************************************************
+    This file is part of TF-Cluster.
 
-  DESCRIPTION:  Miscelaneous functions used in TF-cluser
+    TF-Cluster is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
 
-         BUGS:  Correlation values are larger than perl version
-        NOTES:  ---
-       AUTHOR:  Josh Marshall <jrmarsha@mtu.edu>
-      COMPANY:  Michigan technological University
-      VERSION:  See git log
-      CREATED:  See git log
-     REVISION:  See git log
-     LISCENSE:  GPLv3
+    Foobar is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with TF-Cluster.  If not, see <http://www.gnu.org/licenses/>.
 ***********************************************************************/
 
 ////////////////////////////////////////////////////////////////////////
 //INCLUDES//////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////
 
+#include <graph.tpp>
 #include <iostream>
 
 #include "diagnostics.hpp"
-#include "edge.t.hpp"
-#include "graph.t.hpp"
-#include "vertex.t.hpp"
 
 ////////////////////////////////////////////////////////////////////////
 //NAMESPACE USING///////////////////////////////////////////////////////
@@ -53,10 +54,10 @@ void printClusters(queue< queue<size_t> > clusters,
 }
 
 
-void printCoincidenceMatrix(UpperDiagonalSquareMatrix<u8> matrix, 
+void printCoincidenceMatrix(UpperDiagonalSquareMatrix<u8> *matrix, 
                                 cu8 maxMatch, const vector<string> TFs){
   f64 **mtr;
-  size_t n = matrix.getSideLength();
+  size_t n = matrix->getSideLength();
   mtr = (f64**) malloc(sizeof(*mtr) * n);
   for(size_t i = 0; i < n; i++)
     mtr[i] = (f64*) malloc(sizeof(**mtr) * n);
@@ -64,7 +65,7 @@ void printCoincidenceMatrix(UpperDiagonalSquareMatrix<u8> matrix,
   for(size_t i = 0; i < n; i++){\
     mtr[i][i] = maxMatch;
     for(size_t j = i+1; j < n; j++){
-      mtr[i][j] = mtr[j][i] = matrix.getValueAtIndex(i, j);
+      mtr[i][j] = mtr[j][i] = matrix->getValueAtIndex(i, j);
     }
   }
 
@@ -82,10 +83,6 @@ void printCoincidenceMatrix(UpperDiagonalSquareMatrix<u8> matrix,
 
 
 void printCorrelationMatrix(const CMF &protoGraph){
-  //vector< pair<size_t, double>* > matrix;
-  //unordered_map<string, size_t> labelLookup;
-  //vector<string> labels;
-  //vector<size_t> colSize;
   printf("\t");
   for(size_t i = 0; i < protoGraph.GeneLabels.size();i++)
     printf("%s\t", protoGraph.GeneLabels[i].c_str());
