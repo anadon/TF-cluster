@@ -1,0 +1,490 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+    <title>
+      Affymetrix Developer Network
+    </title>
+    <link href="css/styles.css" rel="stylesheet" type="text/css" />
+  </head>
+  <body>
+	<div id="wrapper">
+		<div id="page">
+			<div id="header">
+				<img alt="Affymetrix.com" src="images/header_banner.jpg" />
+			</div>
+			<div id="content">
+				<h1>Affymetrix® Writing Command Console Results (CHP) Files</h1>
+
+		  	<h2>INTRODUCTION</h2>
+
+<p>The Command Console Results  file can store a variety of data including expression results and genotyping results. </p>
+
+<p>This document will describe how to use the Fusion SDK to write data to a Command Console results file.  This includes: </p>
+
+	<ul>
+	<li><a href="#MAS5">MAS5 Expression Results</a></li>
+	<li><a href="#RMA">RMA and PLIER Expression Results</a></li>
+	<li><a href="#BRLMM">BRLMM and Birdseed Genotyping Results</a></li>
+	<li><a href="#BRLMM">Copy Number and Loss of Heterozygosity Results</a></li>
+	<li><a href="#BRLMM">Copy Number Variation Results</a></li>
+	<li><a href="#BRLMM">Genotyping and Copy Number Results for the DMET PLUS array.</a></li>
+	</ul>
+
+<h2><a name="MAS5" title="MAS5"></a>MAS5 EXPRESSION RESULTS</h2>
+<p>This section will describe how to write MAS5 style expression results to a CHP file. </p>
+
+<p><b>SDK Objects</b></p>
+
+<p>The main top level SDK objects that are required are:</p>
+	<ul>
+	<li>affymetrix_calvin_io::CHPFileWriter - This object provides the writing capabilities.</li>
+	<li>affymetrix_calvin_io::CHPData - This object provides the storage for the CHP file results.</li>
+	</ul>
+	
+<p><b>Workflow</b></p>
+
+<p>The workflow for creating a CHP file with expression results is:</p>
+
+	<ul>
+	<li><p>Create a CHPData object passing in the name of the output CHP file and assay type into the constructor. The assay type is defined in CHPData.h and is: <p>affymetrix_calvin_io::CHP_EXPRESSION_ASSAY_TYPE</p></p></li>
+		
+	<li><p>Set the header information. This is done using the following functions:</p></li>
+	
+		CHPData.SetAlgName - to set the name of the algorithm.</br>
+		CHPData.SetAlgVersion - to set the version number of the algorithm.</br>
+		CHPData.SetArrayType - to set the name of the probe array type (e.g. HG-U133A)</br>
+		CHPData.SetCols - to set the number of columns of features on the array.</br>
+		CHPData.SetRows - to set the number of rows of features on the array.</br>
+		CHPData.SetParentCell - to set the name of the parent CEL file.</br>
+		CHPData.SetProgId - to set the prog id of the COM component implementing the algorithm. This value is not required and is only in the CHP file to support legacy GCOS data.</br>
+		CHPData.AddAlgParam - to add a parameter to the parameters list. We recommend you add a parameter to describe the company or institution your work for.</br>
+		CHPData.AddChipSum - to add a summary statistics (e.g. MAS5 algorithm adds RawQ to this chip summary section).</br>
+		<p>Affymetrix recommends you store information about the program in the header of the CHP file. The program information should include the company or institution writing the software, the name of the program and an identifier for the program. These should be stored in the name/value attribute list of the file header. The attributes names should be:</p>
+			<ul>
+			<li>"program-name" to identify the name of the program</li>
+			<li>"program-id" to identify the program id</li>
+			<li> "program-company" to identify the name of the company or institution writing the software.</li>
+			<br></br>
+			</ul>
+		<p>Use the CHPData::GetGenericData().Header().GetGenericDataHdr()->AddNameValParam() function to add these and other parameters to the file header.</p>
+	<li><p>Set the number of probe sets to store in the file using the CHPData.SetEntryCount function.</p></li>
+	
+	<li><p>Set the number of background zones to store in the file using the CHPData.SetBackgroundZoneCnt function. The MAS5 algorithm computed 16 zones (4x4) and stored the background value for each zone. If no zones are stored then set this value to 0.</p></li>
+	
+	<li><p>Add to the header information about the parent file or files. The Command Console file has the ability to store information about the parent CEL file or files. For each parent file:</p></li>
+		<ul>
+		<li><p>Create a GenericDataHeader object and set the attributes:</p></li>
+			<ul>
+			<p>GenericDataHeader.SetFileId - this is a globally unique identifier for the file.</p>
+			<p>GenericDataHeader.SetFileTypeId - this identifies the type of file. Use the constant affymetrix_calvin_data::INTENSITY_DATA_TYPE to identify a CEL file.</p>
+			</ul>
+		<li><p>Add parameters using the GenericDataHeader.AddNameValParam function.</p></li>
+		<li><p>Add the GenericDataHeader object to the CHPData object using the CHPData.GetFileHeader()->GetGenericDataHdr()->AddParent() function.</p></li>
+		</ul>
+	
+	<li><p>Create a CHPFileWriter object passing in the CHPData object into the constructor.</p></li>
+	
+	<li><p>Call the CHPFileWriter::SeekToDataSet function to seek to the start position of the results.</p></li>
+	
+	<li><p>Loop over each probe set to store in the CHP file. For each probe set:</p></li>
+		<ul>
+		<p>Create a CHPExpressionEntry object for expression results or CHPGenotypeEntry object for genotyping results. Assign the values to the object using the constructor:</p>
+		<p>Example: CHPExpressionEntry entry("probe set name", detection, detectionPValue, signal, pairs, pairsUsed, hasCompResults, change, changePValue, slr, slrLo, slrHi, commonPairs);</p>
+		<li>Call the CHPFileWriter::WriteExpressionEntry or CHPFileWriter::WriteMappingEntry function to write the entry into the file.</li>
+		<br><br>
+		</ul>
+	<li><p>Call the CHPFileWriter::SeekToBgSet function to seek to the start position of the background zones.</p></li>
+	
+	<li><p>Loop over each background zone to store in the CHP file. For each zone:</p></li>
+		<ul>
+		<p>Create a CHPBackgroundZone object passing in the center coordinate, background value and smooth factor.</p>
+		<li>Call the CHPFileWriter::WriteBackgroundZone function to write the zone into the file.</li>
+		</ul>
+	</ul>
+
+
+<h2><a name="RMA" title="RMA"></a>RMA AND PLIER EXPRESSION RESULTS</h2>
+<p>This section will describe how to write expression results generated by RMA and PLIER to a CHP file.</p>
+<p>Command Console CHP files for expression results generated by RMA and PLIER can be created in two steps.  The files can initially be created with just the header information. The expression (quantification) results can be set at a later time using the buffer writer technique. The classes used to create the CHP files are defined specifically for the quantification results.  The workflow below describes this two step approach.</p>
+
+<p><b>SDK Objects</b></p>
+
+<p>The main top level SDK objects for writing these CHP files are:</p>
+
+	<ul>
+	<li>affymetrix_calvin_io::CHPQuantificationFileWriter  - This object provides the writing capabilities.</li>
+	<li>affymetrix_calvin_io::CHPQuantificationFileBufferWriter - This object provides the capability to set and update expression (quantification) results.</li>
+	<li>affymetrix_calvin_io::CHPQuantificationData - This object provides the storage for the CHP file results.</li>
+	</ul>
+
+<p><b>Workflow</b></p>
+<p>The workflow for creating a CHP file with RMA or PLIER results is as follows:</p>
+	<ul>
+	<li><p>Create a CHPQuantificationData object passing in the name of the output CHP file into the constructor.</p></li>
+	
+	<li><p>Set the header information. This is done using the following functions:</p></li>
+		CHPQuantificationData.SetAlgName - to set the name of the algorithm.</br>
+		CHPQuantificationData.SetAlgVersion - to set the version number of the algorithm</br>
+		CHPQuantificationData.SetArrayType - to set the name of the probe array type (e.g. HG-U133A)</br>
+		CHPQuantificationData.SetEntryCount - to set the number of probe sets to store in the file</br>
+		CHPQuantificationData.AddAlgParams - to add a list of algorithm parameters to the file header as name/value/type attributes.  The list of algorithm parameters must include a parameter named "exec-guid".   The value of this parameter identifies CHP files generated by the same analysis run.</br>
+		CHPQuantificationData.AddSummaryParams - to add a list summary statistics as name/value/type attributes (e.g. PLIER algorithm adds pm_mean to this chip summary section).
+		<br></br>
+		<p>Affymetrix recommends you store information about the program in the header of the CHP file. The program information should include the company or institution writing the software, the name of the program and the version of the program. These should be stored in the name/value attribute list of the file header. The attributes names should be:</p>
+			
+			<ul>
+			<li>"program-name" to identify the name of the program</li>
+			<li>"program-version" to identify the version of the program</li>
+			<li>"program-company" to identify the name of the company or institution writing the software.</li>
+			</ul>
+		
+		<p>Use the CHPQuantificationData::GetGenericData().Header().GetGenericDataHdr()->AddNameValParam() function to add these and other parameters to the file header.</p>
+	
+	<li><p>Add to the header information about the parent file or files. The Command Console file has the ability to store information about the parent CEL file or files. For each parent file:</p></li>
+		<ul>
+		<li><p>Create a GenericDataHeader object and set the attributes:</p></li>
+			<ul>
+			<p>GenericDataHeader.SetFileId - this is a globally unique identifier for the file.</p>
+			<p>GenericDataHeader.SetFileTypeId - this identifies the type of file. Use the constant affymetrix_calvin_data::INTENSITY_DATA_TYPE to identify a CEL file.</p>
+			</ul>
+		<li><p>Add parameters using the GenericDataHeader.AddNameValParam function.</p></li>
+		<li><p>Add the GenericDataHeader object to the CHPQuantificationData object using the CHPQuantificationData.GetFileHeader()->GetGenericDataHdr()->AddParent() function.</p></li>
+		</ul>
+	
+	<li><p>Create a CHPQuantificationFileWriter object passing in the CHPQuantificationData object into the constructor. This will create the files with the header information.</p></li>
+	
+	<li><p>Call the CHPQuantificationFileWriter :SeekToDataSet function to seek to the start position of the results.</p></li>
+	
+	<li><p>Loop over each probe set to store in the CHP file. For each probe set:<p></li>
+		<ul>
+		<li><p>Create a ProbeSetQuantificationData object. Set the name data member of the ProbeSetQuantificationData to the probe set name.</p></li>
+		<li><p>Call the CHPQuantificationFileWriter::WriteEntry function to write the entry into the file.</p></li>
+		</ul>
+	<li><p>Update the expression (quantification) results using a file buffer writer as shown below:</p></li>	
+		<ul>
+		<li><p>Create a CHPQuantificationFileBufferWriter and use the Initialize function to set the name of the CHP file.</p></li>
+		<li><p>Loop through the results, using the CHPQuantificationFileBufferWriter::WriteQuantificationEntry function to store them in the CHP file. The results must be presented in the same order as the probe set names in the step above.</p></li>
+		<li><p>Call the CHPQuantificationFileBufferWriter::FlushBuffer function to flush the buffer and close the file.</p></li>
+		</ul>
+	</ul>
+
+
+<h2><a name="BRLMM" title="BRLMM"></a>GENOTYPING, COPY NUMBER, LOSS OF HETEROZYGOSITY, COPY NUMBER VARIATION and DMET  RESULTS</h2>
+<p>Results generated by the algorithms listed below are retained in a file object called "CHPMultiDataData".</p>
+<ul>
+<li>BRLMM</li>
+<li>Birdseed</li>
+<li>CN4 (Copy Number and Loss of Heterozygoisity: Mapping Arrays)</li>
+<li>CN5 (Copy Number and Loss of Heterozygoisity: GenomeWideSNP_6)</li>
+<li>Canary (Copy Number Variation)</li>
+<li>DMET</li>
+</ul>
+<p>The CHPMultiDataData file object is designed to store a variety of data in a matrix format (rows and column of values). The data stored can be extended to include custom metrics.</p>
+<p>The workflow is similar to that defined for RMA and PLIER above in that the results file can be created in two steps using the buffer writer technique.   The file header is  created first.  The remainder of the file will be created at a later time.</p>
+
+<p><b>SDK Objects</b></p>
+<p>The main top level SDK objects that are required are:</p>
+<ul>
+<li>affymetrix_calvin_io::CHPMultiDataFileWriter - This object provides the writing capabilities.</li>
+<li>affymetrix_calvin_io::CHPMultiDataFileBufferWriter - This object provides the capability to set and update results data</li>
+<li>affymetrix_calvin_io::CHPMultiDataData</li>
+	<ul>
+	<li>This object provides the storage for the file results.</li>
+	<li>The results from multiple algorithms can be stored in one or more data groups.  Each data group can include one or more data sets.</li>
+	</ul>
+</ul>
+<p>A description of data groups and data sets can be found in our document <a href="./file_formats/generic.html">Affymetrix® GeneChip Command Console Generic Data File Format</a></p>
+<p>A detailed description of the contents of each results file type can be found in our <a href="./file_formats/index.html">file formats documentation.</a></p>
+
+<p><b>Workflow</b></p>
+<p>The workflow for writing a results file with one data group is as follows:</p>
+<ul>
+<li><p>Create a CHPMultiDataData object in the name of the output results file into the constructor.  The file extension for each analysis can be found in the <a href="#CHPMultiDataDataTable">Results File Extensions and Analysis Types</a> table.</p></li>
+
+<li><p>Set the header information. This is done using the following functions:</p></li>	
+	CHPMultiDataData.SetAlgName - to set the name of the algorithm.</br>
+	
+	CHPMultiDataData.SetAlgVersion - to set the version number of the algorithm.</br>
+	
+	CHPMultiDataData.SetArrayType - to set the name of the probe array type (e.g. Genome-Wide  Human SNP Array 6.0)</br>
+	
+	CHPMultiDataData.SetEntryCount - to set the data shown below.  This function is called for each analysis type to be stored in the MultiData data group:</br>
+		<ul>
+		<li>The affymetrix_calvin_io::MultiDataType analysis type for the analysis results.  See the table <a href="#CHPMultiDataDataTable">Results File Extensions and Analysis Types</a> table for the analysis types associated with each results file.</li>
+		<li>The number of probe sets to store for the analysis.</li>
+		<li>The maximum length of the names of the probe sets.</li>
+		<li>A vector of affymetrix_calvin_io::ColumnInfo objects containing the definition of additional result columns to include in the file for the analysis.</li>
+		</ul>
+	
+	<p>CHPMultiDataData.AddAlgParams - to add a list of algorithm parameters to the file header as name/value/type attributes. The list of algorithm parameters must include a parameter named "exec-guid". The value of this parameter identifies results files generated by the same analysis run.
+CHPMultiDataData.AddSummaryParams - to add a list summary statistics as name/value/type attributes (e.g. BRLMM algorithm adds call rate to this chip summary section).</p>
+	
+	<p>Affymetrix recommends you store information about the program in the header of the file. The program information should include the company or institution writing the software, the name of the program and the version of the program. These should be stored in the name/value attribute list of the file header. The attributes names should be:</p>
+		<ul>
+		<li>"program-name" to identify the name of the program.</li>
+		<li>"program-version" to identify the version of the program.</li>
+		<li> "program-company" to identify the name of the company or institution writing the software.</li>
+		</ul>
+	
+	<p>Use the CHPMultiDataData::GetGenericData().Header().GetGenericDataHdr()->AddNameValParam() function to add these and other parameters to the file header.</p>
+
+<li><p>Add to the header information about the parent file or files. The Command Console file has the ability to store information about the parent CEL file or files. For each parent file:<p></li>
+	<ul>
+	<li><p>Create a GenericDataHeader object and set the attributes:</p></li>
+		<blockquote>GenericDataHeader.SetFileId - this is a globally unique identifier for the file.</blockquote>
+		<blockquote>GenericDataHeader.SetFileTypeId - this identifies the type of file. Use the constant affymetrix_calvin_data::INTENSITY_DATA_TYPE to identify a CEL file.</blockquote>
+	<li><p>Add parameters using the GenericDataHeader.AddNameValParam function.</p></li>
+	<li><p>Add the GenericDataHeader object to the CHPMultiDataData object using the CHPMultiDataData.GetFileHeader()->GetGenericDataHdr()->AddParent() function.</p></li>
+	</ul>
+
+<li><p>Set the file type identifier using the CHPMultiDataData.GenericData.Header().GetGenericDataHdr()->SetFileTypeId() function. This identifies the type of data to be stored in the CHP file.</p></li>
+
+<li><p>CHPMultiDataFileWriter object passing in the CHPMultiDataData object into the constructor.  This will create the file with the header information.</p></li>
+
+<li><p>Create the body of the file with results using a file buffer writer object as described below.</p></li>
+	<ul>
+	<li><p>Create a CHPMultiDataFileBufferWriter.  Use the CHPMultiDataFileBufferWriter.Initialize function to set the name of the CHP file, the type of result data to be stored and the maximum length of the probe set names.</p></li>
+	<li><p>To store the analysis results, instantiate a ProbeSetMultiData entry object that corresponds to the MultiDataType used in the above step.  Loop through the results completing the following steps:</p></li>
+		<ul>
+		<li>Set the name data member of the entry object with that of the probe set.</li></br>
+		<li>Set the results for the default columns of the entry object.</li></br>
+		<li>Add the results for any additional columns defined when the CHP file header was created to the metrics vector of the entry object.</li></br>
+		<li>Write the results using the GenotypEntryBufferWriter.WriteMulitDataGenotypeEntry function.</li>
+		<br></br>
+		</ul>
+	<li><p>Use the GenotypeEntryBufferWriter.FlushBuffer function to flush the buffer and close the file.</p></li>
+	</ul>
+</ul>
+
+<p><a name="CHPMultiDataDataTable" title="CHPMultiDataDataTable"></a><b>Results File Extensions and Analysis Types</b></p>
+<p>The following table defines the results file extensions and analysis types. For a description of the contents and format of each file type please refer to the <a href="./file_formats/index.html">file formats documentation.</a></p>
+
+<TABLE BORDER>
+	<tbody><tr>
+	<td>
+	<b>
+	Algorithm Name
+	</b>
+	</td>
+	<td>
+	<b>
+	Type of Algorithm
+	</b>
+	</td>
+	<td>
+	<b>
+	File Extension
+	</b>
+	</td>
+	<td>
+	<b>
+	Analysis Type(affymetrix_calvin_io::MultiDataType)
+	</b>
+	</td>
+	</tr>
+	
+	<tr>
+	<td>
+	BRLMM
+	</td>
+	<td>
+	Genotyping
+	</td>
+	<td>
+	CHP
+	</td>
+	<td>
+	affymetrix_calvin_io::MultiDataType::GenotypeMultiDataType</br>
+	affymetrix_calvin_io::MultiDataType::GenotypeControlMultiDataType</br>
+	</td>
+	</tr>
+	
+	<tr>
+	<td>
+	Birdseed
+	</td>
+	<td>
+	Genotyping
+	</td>
+	<td>
+	CHP
+	</td>
+	<td>
+	affymetrix_calvin_io::MultiDataType::GenotypeMultiDataType</br>
+	affymetrix_calvin_io::MultiDataType::GenotypeControlMultiDataType</br>
+	</td>
+	</tr>
+	
+	<tr>
+	<td>
+	CN4</br>
+	Algorithm</br>
+	</td>
+	<td>
+	Copy Number
+	</td>
+	<td>
+	CNCHP
+	</td>
+	<td>
+	affymetrix_calvin_io::MultiDataType::CopyNumberMultiDataType
+	</td>
+	</tr>
+	
+	<tr>
+	<td>
+	CN4</br>
+	Algorithm</br>
+	</td>
+	<td>
+	Loss of Heterozygosity
+	</td>
+	<td>
+	LOHCHP
+	</td>
+	<td>
+	affymetrix_calvin_io::MultiDataType::CopyNumberMultiDataType
+	</td>
+	</tr>
+	
+	<tr>
+	<td>
+	CN5</br>
+	Algorithm</br>
+	</td>
+	<td>
+	Copy Number and Loss Of Heterozygosity
+	</td>
+	<td>
+	CNCHP
+	</td>
+	<td>
+	affymetrix_calvin_io::MultiDataType::CopyNumberMultiDataType
+	</td>
+	</tr>
+	
+	<tr>
+	<td>
+	Canary
+	</td>
+	<td>
+	Copy Number Variation
+	</td>
+	<td>
+	CNVCHP
+	</td>
+	<td>
+	affymetrix_calvin_io::MultiDataType::CopyNumberVariationMultiDataType
+	</td>
+	</tr>
+
+	<tr>
+	<td>
+	DMET
+	</td>
+	<td>
+	Genotyping and Copy Number
+	</td>
+	<td>
+	DMET.CHP
+	</td>
+	<td>
+	affymetrix_calvin_io::MultiDataType::DmetBiAllelicMultiDataType</br>
+	affymetrix_calvin_io::MultiDataType::DmetMultiAllelicMultiDataType</br>
+	affymetrix_calvin_io::MultiDataType::DmetCopyNumberMultiDataType</br>
+	</td>
+	</tr>
+	
+	</tbody>
+</table>
+
+<h2>GENERIC RESULTS</h2>
+<p>The Command Console CHP file format is flexible to store integers, floating point values or strings that can be represented in a matrix (rows & columns) format. As an example the Affymetrix tiling array results which is comprised of a genomic position, signal and p-value for each probe pair on the array will be stored in a CHP file of the Command Console format.</p>
+<p>The workflow is very similar to that defined above. The difference is that specific classes where defined for the specific number of columns and column types for the current expression and genotyping data sets. A generic data and writer objects are provided in the Fusion SDK to handle writing any number of columns and column types into a CHP file. This generic file writer and data object are used by the above CHPData and CHPFileWriter classes, but with the added requirements on the number of groups, sets and column definitions.</p>
+
+<p><b>SDK Objects</b></p>
+<p>The main top level SDK objects that are required are:</p>
+<ul>
+<li>affymetrix_calvin_io::GenericFileWriter - This object provides the writing capabilities.</li>
+<li>affymetrix_calvin_io::GenericData - This object provides the storage for the CHP file results.</li>
+</ul>
+
+<p><b>Workflow</b></p>
+<p>The workflow, again, is very similar to that defined above.</p>
+<ul>
+<li><p>Create a GenericData object using the default constructor.</p></li>
+<li><p>Set the file name using the GenericData.Header().SetFilename() function.</p></li>
+<li><p>Set the file type identifier using the GenericData.Header().GetGenericDataHdr()->SetFileTypeId() function. This identifies the type of data to be stored in the CHP file.</p></li>
+<li><p>Add parameters to the generic data header using the GenericData.Header().GetGenericDataHdr()->AddNameValParam() function.</p></li>
+<li><p>Create a DataGroupHeader object passing in the name of the data group into the constructor.</p></li>
+<li><p>Add the DataGroupHeader object to the GenericData object using the GenericData.Header().AddDataGroupHdr() function.</p></li>
+<li><p>Repeat the above two steps for each data group to add to the file.</p></li>
+<li><p>For each data group:</p></li>
+	<ul>
+	<li><p>Create one or more data sets. For each data set:</p></li>
+		<ul>
+		<li>Create a data set header object (DataSetHeader).</li>
+		<li>Set the name of the data set header using the DataSetHeader.SetName() function.</li>
+		<li>Set the number of rows in the data set using the DataSetHeader.SetRowCnt() function.</li>
+		<li>Add the parameters to the data set using the DataSetHeader.AddNameValParam() function.</li>
+		<li>Add the columns to the data set using the DataSetHeader.AddXYZColumn() function (XYZ specifies the type, e.g. Float or Int).</li>
+		<li>Add the data set to the data group using the DataGroupHeader.AddDataSetHdr() function.</li>
+		<br></br>
+		</ul>
+	</ul>
+<li><p>At this point the data object has the parameters, data groups and data set definitions.</p></li>
+<li><p>Create a GenericFileWriter object passing in the FileHeader object from the GenericData object into the constructor. The FileHeader object is retrieved using the GenericData.Header() function.</p></li>
+<li><p>Call the GenericFileWriter.WriteHeader function to write the file header.</p></li>
+<li><p>For each data group:</p></li>
+	<ul>
+	<li><p>Write the data group header using the GenericFileWriter.GetDataGroupWriter(index).WriteHeader() function.</p></li>
+	<li><p>For each data set in the group:</p></li>
+		<ul>
+		<li><p>Write the data set header using the DataSetWriter.WriteHeader() function. The data set writers are retrieved using the GenericFileWriter.GetDataGroupWriter(index).GetDataSetWriters() function.</p></li>
+		<li><p>Update the offset of the next data set. Use the following code to do so:</p></li>
+			<ul>
+			int32_t dataSetSz = dataSetWriter->GetDataSetSize();</br>
+			int32_t offset = writer->GetFilePos();</br>
+			writer->SeekFromCurrentPos(dataSetSz + 1);</br>
+			dataSetWriter->UpdateNextDataSetOffset();</br>
+			dataSetWriter is the DataSetWriter object and writer is the GenericFileWriter object.</br>
+			</br>
+			</ul>
+		</ul>	
+	<li><p>Update the next data group position by calling the DataGroupWriter.UpdateNextDataGroupPos() function.</p></li>
+	</ul>
+<li><p>Now write the data to the file.</p></li>
+<li><p>For each data group:</p></li>
+	<ul>
+	<li><p>Get the data group writer using the GenericFileWriter.GetDataGroupWriter() function.</p></li>
+	<li><p>For each data set in the group:</p></li>
+		<ul>
+		<li>Get the data set writer using the DataGroupWriter.GetDataSetWriter() function.</li>
+		<li>Seek the start of the data set using the GenericFileWriter.SetFromBeginPos() function. The positions may need to be cached from step 12 above.</li>
+		<li>Loop over each row in the data set and call the DataSetWriter.Write() function for each column passing in the data to write.</li>
+		</ul>
+	</ul>
+
+</ul>
+
+<p>For reference look at the classes defined in the CalvinCHPFileWriter.h/cpp files. These classes provide the wrappers for writing expression results to a CHP file using the GenericData and GenericFileWriter classes.</p>
+
+
+<h2>Requirements And Recommendations</h2>
+
+<p>The code should be placed within a try/catch statement as the writers will throw exceptions upon errors.</p>
+
+<p>GCOS files did not contain the probe set name in the CHP file. The names were stored in the CDF file. This required that the number of probe sets and their order in the CHP and CDF file be identical.  Although the probe set name is in the Command Console CHP files, thus eliminating the absolute requirement that order and number be identical, the convention will be to store as many probe sets in the CHP file as are defined in the CDF file and to store them in the same order.</p>
+
+<p>It is highly encouraged to add the name of your company or institution to the algorithm parameters section of the CHP file. This way you can track those files created by your software.</p>
+
+
+			<div id="footer">
+				&#169; 2009 Affymetrix, Inc. All rights reserved.
+			</div>
+		</div>
+	</div>
+  </body>
+</html>

@@ -1,0 +1,95 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+    <title>
+      Affymetrix Developer Network
+    </title>
+    <link href="css/styles.css" rel="stylesheet" type="text/css" />
+  </head>
+  <body>
+	<div id="wrapper">
+		<div id="page">
+			<div id="header">
+				<img alt="Affymetrix.com" src="images/header_banner.jpg" />
+			</div>
+			<div id="content">
+			
+			<h1>Affymetrix® CDF Data File Format Change</h1>		
+			
+			<p>The format of our CDF files for Axiom&#0153 Genotyping Arrays has been changed to provide support for multple versions of CDF files.  CDF files 
+			relate the names of the probesets to the features on our arrays. Analyses performed by Affymetrix software provide results for only those probe sets listed in CDF files.</p>
+
+			<p>The primary purpose of this change in the data file format is to allow for variance in the probe set content included in our CDF files.			 
+			New versions of CDF files will be published when the constituency of probe sets change and/or probe sets are added or removed from the analysis.  The format of the 
+			CDF files for Axiom&#0153 and other GeneChip® arrays that are currently available will not change.</p> 
+			 
+			<h2>Description of CDF File Content Change</h2>				
+			<p>The additions to the file format to allow for versioning of CDF files are noted below. Please note that these additions will also allow us to provide support
+			for those probe arrays where versioning information is included in the name of the array.</p>
+			
+			<p>Additional details can be found in the <a href="./file_formats/cdf.html"> Affymetrix Data File Formats </a> documentation for CDF files.</p>
+			
+			<ul>
+			<li>A GUID to uniquely identify the CDF file.</li>			
+			<li>An md5 value for verifying the integrity of the file.</li>			
+			<li>An array of probe array types supported by the CDF file.</li>
+			</ul>
+			
+			<h2>Additions to the Fusion SDK</h2>
+			
+			<p>API calls have been added to our Fusion SDK to provide the values of the new fields to calling applications.  The Fusion APIs can be used to parse any CDF file.
+			The CDF file format version is transparent to the software invoking the API.</p>		
+
+			<p>The following summarizes the additions and changes to the Fusion SDK in support of the new CDF file format:</p>
+			
+			<table>
+			<tbody><tr>			
+			<th width = "155"><b>Class</b></th>
+			<th width = "155"><b>Function Name</b></th>
+			<th width = "420"><b>Description</b></th>
+			</tr>					
+			<tr>
+			<td width="155">FusionCDFFileHeader</td>
+			<td width="155">GetFormatVersion()</td>
+			<td width="420">Returns the file version of the CDF file</td>			
+			</tr>
+			<tr>
+			<td width="155">FusionCDFFileHeader</td>
+			<td width="155">GetGUID()</td>
+			<td width="420">Returns the GUID; For CDF file versions 1-3, this call returns NULL.</td>	
+			</tr>
+			<tr>
+			<td width="155">FusionCDFFileHeader</td>
+			<td width="155">GetIntegrityMd5()</td>
+			<td width="420">Returns the md5 value from the CDF file header</td>			
+			</tr>
+			<tr>
+			<td width="155">FusionCDFData</td>
+			<td width="155">GetChipType()</td>
+			<td width="420">Returns the name of the probe array without versioning information; In the C++ SDK, the signature was changed to remove "const".</td>		
+			</tr>
+			<tr>
+			<td width="155">FusionCDFData</td>
+			<td width="155">GetChipTypes()</td>
+			<td width="420">Returns a vector with array names and versions supported by the CDF file (i.e. probeArray.r1, probeArray.r2);  In the C++ SDK, the signature was changed to remove "const".</td></td>		
+			</tr>
+			<td width="155">FusionCDFData</td>
+			<td width="155">GetGUID()</td>
+			<td width="420">Returns the GUID; For CDF file versions 1-3, this call returns NULL.</td>		
+			</tr>
+			<td width="155">FusionCDFData</td>
+			<td width="155">GetIntegrityMd5()</td>
+			<td width="420">Returns the md5 value; For CDF file versions 1-3, this call returns 0.</td>			
+			</tr>
+			</tbody></table>
+			</br>
+			</div>
+			<div id="footer">
+				&#169; 2010 Affymetrix, Inc. All rights reserved.
+			</div>
+		</div>
+	</div>
+  </body>
+</html>

@@ -1,0 +1,197 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+    <title>
+      Affymetrix Developer Network
+    </title>
+    <link href="css/styles.css" rel="stylesheet" type="text/css" />
+  </head>
+  <body>
+	<div id="wrapper">
+		<div id="page">
+			<div id="header">
+				<img alt="Affymetrix.com" src="images/header_banner.jpg" />
+			</div>
+			<div id="content">
+			
+			<h1>Affymetrix® Multi-Channel CEL and CDF Data Files </h2>
+			
+			<h2>MULTI-CHANNEL CEL FILE</h2>
+			
+			 <p>The multi-channel CEL file, like the original CEL file, stores the results of the intensity calculations on the pixel values of the DAT file. Unlike the original CEL file, the multi-channel CEL file stores the results in groups associated with each channel (i.e. wavelength) in the file. Each channel in the multi-channel CEL file includes an intensity value, standard deviation of the intensity, the number of pixels used to calculate the intensity value, a flag to indicate an outlier as calculated by the algorithm and a user defined flag indicating the feature should be excluded from future analysis. A multi-channel CEL file with 4 channels would, therefore, have 4 groups of these data sets. The file stores the previously stated data for each feature on the probe array. </p>
+			 
+			 <p>The specifications for the file format are below.   Additional details can be found in the <a href="./file_formats/cel.html"> Affymetrix Data File Formats </a> documentation for CEL files.</p>
+
+			<p>The data type identifier is set to "affymetrix-calvin-multi-intensity".</p>
+
+			<p>The intensity data is stored in a multiple groups; one group per channel (i.e. wavelength).Each group will be named according to their wavelength and will contain 5 data sets. The definitions of the data sets are the same as that in single channel CEL files:</p>
+			
+			<TABLE BORDER>
+   <tbody><tr><TR ALIGN=LEFT>
+    <th NOWRAP>
+    Data Set Name
+    </th>
+    <th>
+    Description
+    </th>
+    <th NOWRAP>
+    Number of Columns
+    </th>
+    <th NOWRAP>
+    Column Name
+    </th>
+    <th NOWRAP>
+   Column Type
+    </th>
+    <th>
+    Content
+    </th>
+   </tr>
+   <tr>
+    <td>
+    Intensity
+    </td>
+    <td>
+    The intensity values for each feature.
+    </td>
+    <td>
+    1
+    </td>
+    <td>
+    Intensity
+    </td>
+    <td>
+    FLOAT
+    </td>
+    <td>
+    The intensity value. The row order is the same as defined in the 
+        GCOS CEL file.
+    </td>
+   </tr>
+   <tr>
+    <td>
+    StdDev
+    </td>
+    <td>
+    The standard deviations of the intensity values.
+    </td>
+    <td>
+    1
+    </td>
+    <td>
+    StdDev
+    </td>
+    <td>
+   FLOAT
+    </td>
+    <td>
+    The standard deviation value. The row order is the same as 
+        defined in the GCOS CEL file.
+    </td>
+   </tr>
+   <tr>
+    <td>
+    Pixel
+    </td>
+    <td>
+    The number of pixels used to calculate the intensity values.
+    </td>
+    <td>
+    1
+    </td>
+    <td>
+    Pixel
+    </td>
+    <td>
+    SHORT
+    </td>
+    <td>
+    SHORT - The pixel count value. The row order is the same as 
+        defined in the GCOS CEL file.
+    </td>
+   </tr>
+   <tr>
+    <td>
+    Outlier
+    </td>
+    <td>
+   The X/Y coordinates of those features called as outliers by the 
+        algorithm.<o:p></o:p>
+    </td>
+    <td>
+    2
+    </td>
+    <td>
+   X<br>
+    Y
+    </td>
+    <td>
+    SHORT<br>
+    SHORT
+    </td>
+    <td>
+    The X coordinate of the outlier cell.<br>
+    The Y coordinate of the outlier cell.
+    </td>
+   </tr>
+   <tr>
+    <td>
+    Mask
+    </td>
+    <td>
+    The X/Y coordinates of the user masked features.
+    </td>
+    <td>
+    2
+    </td>
+    <td>
+    X<br>
+     Y
+    </td>
+    <td>
+   SHORT<br>
+    SHORT
+    </td>
+    <td>
+    The X coordinate of the outlier cell.<br>
+    The Y coordinate of the outlier cell.
+    </td>
+   </tr>
+  </tbody></table>
+			
+			
+			<p>Functions added to the Fusion layer of the SDK in support of multi-channel CEL files include the following:</p>
+
+    <ul>
+	<li>IsMultiColor() will return true if the CEL file has multiple channels and false if it has one channel.</li>
+    <li>GetChannels() will return a list of channel (data group) names stored in the CEL file.</li>
+    <li>SetActiveDataGroup(const std::wstring &groupName) sets the active data group for a multi-channel CEL file. Data returned in subsequent calls to the CEL file will be based on the active data group.</li>
+	</ul>
+	
+
+<h2>MULTI-CHANNEL CDF FILE</h2>
+
+
+ <p>Like those supporting the single-channel microarrays, CDF files for multi-channel microarrays are in XDA file format. The file version for multi-channel CDF files is set to 3.</p>
+
+<p>Detailed information about the contents of CDF files can be found in our <a href="./file_formats/cdf.html"> Affymetrix File Formats </a> documentation for CDF files.</p>
+
+<p>The following have been added to the Fusion SDK in support of the multi-channel microarray format:</p>
+
+    <ul>
+	<li>The function GetChannel() has been added to the class FusionCDFProbeGroupInformation to return the channel of a probe group.</li>
+	<li>The probeset type (UnitType) MultichannelMarker has been added to the class FusionCDFProbeGroupInformation</li>
+	<li>A field to define the probe replication of a group has been added to the class FusionCDFProbeGroupInformation.  This field is available in CDF files in version 3 format only.</li>
+	<li>The function GetRepType() has been added to return the replication type of a probe group.</li>
+	</ul>
+			 
+			</div>
+			<div id="footer">
+				&#169; 2009 Affymetrix, Inc. All rights reserved.
+			</div>
+		</div>
+	</div>
+  </body>
+</html>
