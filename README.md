@@ -78,7 +78,7 @@ expression file to create clusters from uses the following format:
 
 ##Build Requirements####################################################
 gcc-libs
-
+madlib
 libc
 
 ##Installation##########################################################
