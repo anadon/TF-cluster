@@ -28,8 +28,6 @@ $(CMTX_INCLUDE):$(CMTX)
 	cp correlation-matrix/statistics.h .
 
 $(CMTX):
-	git submodule init
-	git submodule update --remote
 	cd correlation-matrix ; make
 	cp -f correlation-matrix/correlation-matrix.a .
 	cp -f correlation-matrix/correlation-matrix.o .
