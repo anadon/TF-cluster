@@ -3,7 +3,10 @@
 EXEC=tf-cluster
 
 all:$(EXEC)
-	cd src ; make ;  cp $(EXEC) .
+
+$(EXEC):
+	cd src ; make ;
+	cp src/$(EXEC) .
 
 clean:
 	rm -f $(EXEC)
