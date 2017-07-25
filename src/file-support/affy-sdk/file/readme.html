@@ -1,0 +1,122 @@
+<html><head>
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=windows-1252">
+<title>File Parsers SDK</title>
+<LINK href="docs/style.css" type=text/css rel=stylesheet>
+<base target="_self">
+</head>
+<BODY BGCOLOR="#FFFFFF" TEXT="#000000" LINK="#EE0000" ALINK="#808080" VLINK="#808080">
+
+<table border =0 cellspacing="0" class="content"><tr>
+<th align=Left span class="header2" border=0><span class="header2">FILE PARSERS SDK 
+- RELEASE 3</span></th></tr>
+<tr>
+<td valign="top">The File Parsers SDK is a toolkit for providing parsing 
+capabilities with the Affymetrix BAR, BPMAP, CDF, CEL, CHP, DAT, DTT 1.1 XML, 
+EXP, GRC, MSK, and PSI files. The C++ code in this SDK are written 
+without MS Windows dependencies so as to be compatible with a variety of 
+machines and operating systems.</td></tr>
+<tr><td height=10></td></tr>
+	<tr>
+<th align=Left span class="header2">
+<span class="header2">CONSTANTS</span></th></tr>
+	<tr>
+<td valign="top">There are several constants that may need to be defined to 
+enable compilation and execution on specific operating systems. These are :<br>
+<br>
+IS_BIG_ENDIAN - Define this value if the machine represents its data in big 
+endian format.<br>
+<br>
+_INCLUDE_UNISTD_HEADER_ - Define this value if the UNISTD.H header file is used 
+by the C++ compiler on your machine.<p>WIN32 - Define this value if using the 
+MSVC++.NET compiler.<p>_USE_MEM_MAPPING_ - This value is used to indicate if 
+memory mapping should be used. This constant is not set, by default, within the source code. 
+You must define this macro in the compilation arguments to enable memory 
+mapping. Memory mapping has only been implemented for BAR, BPMAP, CDF and CEL file reading.<br>
+&nbsp;</td></tr>
+<tr><td height=10></td></tr>
+	<tr>
+<td valign="top"> 
+<span class="header2">RELEASE NOTES</span></td>
+	</tr>
+	<tr>
+<td valign="top"> 
+Release 1 of the SDK provides:<ul>
+	<li>Data access capabilities for CEL, CHP, CDF, BAR 
+and BPMAP files.</li>
+	<li>&nbsp;This version was developed and tested on a Windows XP system 
+using MSVC++.NET 2003 and RedHat Linux 8 using G++ version 3.0.</li>
+</ul>
+<p>Release 2 of 
+the SDK provided the following changes:</p>
+<ul>
+	<li>Tested on Windows XP using MSVC++.NET 2003 and Apple Macintosh G5 System X 
+	and Cygwin (under Windows XP) systems using G++ 3.3.</li>
+	<li>Memory mapping techniques were implemented for CEL, CDF, BAR and BPMAP 
+	file reading for faster file access. This change in access required a 
+	change in several interfaces. The memory mapping feature use WIN32 APIs to 
+	map the file for the Windows platform and POSIX APIs for non-Windows 
+	platforms.</li>
+	<li>Access to control probe sets stored in CDF files. A new class within the 
+	affxcdf namespace was added to provide the X/Y coordinates of the probes for 
+	the controls (corner checkerboards, central cross, etc.)</li>
+	<li>Support for BAR version 2 file has been added.</li>
+	<li>Changed the use of LONG types to INT for extended system compatibility.</li>
+	<li>Many of the interfaces have changed for memory mapping support. Most 
+	significant is the
+<span class="content">
+	<b>CELFileEntryType</b> object. This object no longer stores X/Y coordinate, 
+	mask and outlier flag. This data is accessible via added functions to the <b>
+	CCELFileData</b> class.</span></li>
+</ul>
+<p><span class="content">Release 3 of the SDK provides the following changes:</span></p>
+<ul>
+	<li>Tested on Windows XP using MSVC++.NET 2003 and Apple Macintosh G5 System 
+	X systems using G++ 3.3.</li>
+	<li>Added CHP file parsing of resequencing and tag arrays.</li>
+	<li>Support for BPMAP version 2 and 3.</li>
+	<li>Changed interfaces to CEL reader to support the Affymetrix GeneChip<sup><font face="Times New Roman">®</font></sup> 
+	Exon Array Computational Tool (ExACT).</li>
+	<li>Added parsers for EXP, DAT, DTT 1.1 XML, GRC, MSK and PSI files.</li>
+</ul>
+<p>&nbsp;</td>
+	</tr>
+	
+
+
+
+
+	<tr>
+<td valign="top"> 
+&nbsp;</td>
+	</tr>
+	
+
+
+
+
+	<tr>
+<td valign="top"> 
+<span class="header2">3RD PARTY LIBRARIES</span></td>
+	</tr>
+	<tr>
+<td valign="top"> 
+		<p>The SDK uses the XERCES library for parsing XML files. Source code for 
+		this library is not included as part of the File SDK.&nbsp; Current 
+		formatted XML files include:</p>
+		<ul>
+			<li>DTT 1.1 XML MAGE Files</li>
+		</ul>
+		<p>The XERCES library is available at: <a href="http://xml.apache.org/xerces-c/">
+		http://xml.apache.org/xerces-c/</a>. You must download and build this 
+		library to use the XML parsing objects of the File SDK. The File SDK 
+		was tested with XERCES version 2.6.</p>
+		</td>
+	</tr>
+	
+
+
+
+
+</table>
+</body>
+</html>

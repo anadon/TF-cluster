@@ -1,3 +1,0 @@
-# These window path names need to be read with m_optEscapeOk=false.
-pathname
-C:\some\path\to\a\file.txt

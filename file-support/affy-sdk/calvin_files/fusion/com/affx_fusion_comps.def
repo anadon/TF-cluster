@@ -1,9 +1,0 @@
-
-LIBRARY      "affx_fusion_comPS"
-
-EXPORTS
-	DllGetClassObject       PRIVATE
-	DllCanUnloadNow         PRIVATE
-	GetProxyDllInfo         PRIVATE
-	DllRegisterServer		PRIVATE
-	DllUnregisterServer		PRIVATE

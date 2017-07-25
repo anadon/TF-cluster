@@ -1,0 +1,61 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta name="generator" content="HTML Tidy for Windows (vers 14 February 2006), see www.w3.org" />
+    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+    <title>
+      Affymetrix Developer Network
+    </title>
+    <link href="css/styles.css" rel="stylesheet" "text/css" />
+  </head>
+  <body>
+    <div id="wrapper">
+      <div id="page">
+        <div id="header">
+          <img alt="Affymetrix.com" src="images/header_banner.jpg" />
+        </div>
+        <div id="content">
+ 	
+
+<h1>Writing Command Console Array Files</h1>
+
+ 
+		<h2>INTRODUCTION</h2>
+	
+
+	<p>The Command Console array file (or array set file) is an XML file to store array and user attributes for one or more arrays of an array set.</p>
+
+<p>This file must exist prior to processing an array within the Command Console system. The equivalent process is the sample/experiment registration in the GCOS system or creating an EXP file in the MAS5 software.</p>
+
+<p>The array file will store information such as array type and end user attributes using one or more templates.</p>
+		<h2>SDK OBJECTS</h2>
+	
+
+	<p>The object to store the array file contents is the <b>affymetrix_calvin_array.ArrayData</b> class (affy/sdk/calvin_files/array/src/ArrayData.h/cpp files).</p>
+
+<p>The object to read the contents of an array file is the <b>affymetrix_calvin_io.ArrayFileReader</b> class (affy/sdk/calvin_files/parsers/src/ArrayFileReader.h/cpp files).</p>
+
+<p>The object used to write the array object to the array file is the <b>affymetrix_calvin_io.ArrayFileWriter</b> class <br />(affy/sdk/calvin_files/writers/src/ArrayFileWriter.h/cpp files).</p>
+		<h2>WORKFLOW</h2>
+	
+
+	<p>The workflow for writing an array file is:</p>
+
+   <p>1. Create an ArrayData object and set the properties.<br />
+   2. Resize the ArrayData.PhysicalArraysAttributes vector to hold information for each of the physical arrays to be added to the file. Initial array files that have not yet been assigned a physical array should leave this blank.<br />
+   3. For each physical array defined, set the properties and parameters.<br />
+   4. Add user attributes to the ArrayData.UserAttributes object. This is an array of name/type/value parameters. There can be as many parameters as desired. Unlike the GCOS system, there is no requirement that the parameters come from a template nor do they need to match what is in a template. A template file is simply an easy method of storing one or more attribute definitions.<br />
+   5. Create an ArrayFileWriter object.<br />
+   6. Write the array file by calling the ArrayFileWriter.Write() function passing in the name of the array file and the ArrayData object.</p>
+
+<p>The Fusion SDK uses the Apache Xerces XML SDK for its XML parsing and witing capabilities. Source code for Xerces must be obtains from the Apache web site and compiled together with the Fusion SDK.</p>
+        </div>
+        <div class="clr"></div>
+        <div id="footer">
+          &#169; 2009 Affymetrix, Inc. All rights reserved.
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

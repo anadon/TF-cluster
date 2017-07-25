@@ -1,0 +1,4 @@
+correlation-matrix-pthread
+*.a
+*.o
+gmon.out
