@@ -34,6 +34,7 @@
 #include <unordered_map>
 #include <utility>
 
+#include "auxiliaryUtilities.hpp"
 #include "correlation-matrix.hpp"
 #include "statistics.h"
 #include "quickmerge.hpp"
@@ -47,7 +48,7 @@
                 "analysis -- clean up your data!\n"
 #define STRING3 "WARNING: missing gene data for Transcription Factor " \
                 "%s, omitting from analysis -- clean up your data!\n"
- 
+
 
 ////////////////////////////////////////////////////////////////////////
 //NAMESPACE USING///////////////////////////////////////////////////////
@@ -92,6 +93,15 @@ struct tauCorrHelpStruct{
 
 typedef struct tauCorrHelpStruct TCHS;
 
+
+struct WRCorrHelpStruct{
+  size_t vecLeng;
+  double **results;
+  const vector<size_t> *TFCorrData;
+  const vector<GER> *geneCorrData;
+};
+
+typedef struct WRCorrHelpStruct WRCHS;
 
 struct rankHelpStruct{
   size_t numerator;
@@ -176,7 +186,7 @@ void *tauCorrelationHelper(void *protoArgs);
 ////////////////////////////////////////////////////////////////////////
 
 
-ED loadExpressionData(cs8 *expressionFile, 
+ED loadExpressionData(cs8 *expressionFile,
                             const unordered_map<string, char> &TFCheck){
 
   vector<string> colHeaders, rowHeaders;
@@ -185,13 +195,13 @@ ED loadExpressionData(cs8 *expressionFile,
   char *word;
   //ifstream exprCoeffReader;
   FILE *exprCoeffReader;
-  ED tr = {vector< size_t >(), vector< GER >(), 0, vector<string>(), 
-                                                      vector<string>()};  
+  ED tr = {vector< size_t >(), vector< GER >(), 0, vector<string>(),
+                                                      vector<string>()};
   void *tmpPtr;
   unordered_map<string, char> uniqueEntryCheck;
   string geneLabel;
   GER tmpRecord;
-  
+
   tmpPtr = calloc(sizeof(*word), 1024);
   word = (char*) tmpPtr;
 
@@ -200,7 +210,7 @@ ED loadExpressionData(cs8 *expressionFile,
     fprintf(stderr, STRING1, expressionFile);
     exit(1);
   }
-  
+
   int readStatus = 0;
   while (EOF != (readStatus = fscanf(exprCoeffReader, "%s1022", word))){
     tmpPtr = realloc(word, strlen(word)+1);
@@ -211,27 +221,27 @@ ED loadExpressionData(cs8 *expressionFile,
   }
   fclose(exprCoeffReader);
   free(word);
-  
+
   tr.corrVecLeng = 0;
   errno = 0;
   while(0.0 != strtod(fileContents[1+tr.corrVecLeng], NULL)){
     tr.corrVecLeng++;
   }
-  
-  
+
+
   if(fileContents.size() % (tr.corrVecLeng+1) != 0){
     fprintf(stderr, "Experimental data in file has a dataset length "
                                                     "inconsistancy\n");
     //exit(EINVAL);
   }
-  
+
 
   //loop
   size_t entryIndex = 0;
   while(entryIndex < fileContents.size()){
-    
+
     geneLabel = string(fileContents[entryIndex++]);
-    
+
     if(geneLabel == string("")) continue;
 
     if(uniqueEntryCheck.count(geneLabel)){
@@ -244,10 +254,10 @@ ED loadExpressionData(cs8 *expressionFile,
     tmpRecord.nameIndex = tr.genes.size();
     tr.genes.push_back(geneLabel);
 
-    
+
     tmpPtr = malloc(sizeof(f64) * tr.corrVecLeng);
     tmpRecord.exprData = (f64*) tmpPtr;
-    
+
     for(size_t i = 0; i < tr.corrVecLeng; i++)
       tmpRecord.exprData[i] = strtod(fileContents[entryIndex++], NULL);
 
@@ -257,9 +267,9 @@ ED loadExpressionData(cs8 *expressionFile,
       tr.TFCorrData.push_back(tr.geneCorrData.size()-1);
       tr.TFs.push_back(geneLabel);
     }
-    
+
   }
-  
+
   for(size_t i = 0; i < fileContents.size(); i++){
     free(fileContents[i]);
   }
@@ -276,7 +286,7 @@ ED loadExpressionData(cs8 *expressionFile,
 From expression data, construct a upper-diagonal section of a
 correlation matrix, omitting the x=y entries.
 ***********************************************************************/
-CMF calculatePearsonCorrelationMatrix(const ED &input, 
+CMF calculatePearsonCorrelationMatrix(const ED &input,
                                                   cf64 **sumsOfSquares){
 
   CMF tr;
@@ -284,7 +294,7 @@ CMF calculatePearsonCorrelationMatrix(const ED &input,
   struct corrHelpStruct *instructions;
   int *toIgnore;
   void *tmpPtr;
-  
+
   tr.TFLabels = input.TFs;
   tr.GeneLabels = input.genes;
 
@@ -357,7 +367,7 @@ void calculateRankCorrelationMatrix(ED &input){
 
   /*
   csize_t numCPUs = 1;  //*/
-  
+
   //Create the ranks////////////////////////////////////////////////////
 
   tmpPtr = malloc(sizeof(*workers) * numCPUs);
@@ -385,7 +395,7 @@ void calculateRankCorrelationMatrix(ED &input){
 
   free(workers);
   free(RHSinstructions);
-  
+
   //Calculate rank correlation//////////////////////////////////////////
 
   /*tmpPtr = malloc(sizeof(*workers) * numCPUs);
@@ -404,7 +414,7 @@ void calculateRankCorrelationMatrix(ED &input){
 
   if(numCPUs > 1){
     for(size_t i = 0; i < numCPUs; i++)
-      pthread_create(&workers[i], NULL, rankCorrHelper, 
+      pthread_create(&workers[i], NULL, rankCorrHelper,
                                                   &RCHSinstructions[i]);
     for(size_t i = 0; i < numCPUs; i++)
       pthread_join(workers[i], (void**) &toIgnore);
@@ -433,11 +443,11 @@ void *correlationHelper(void *protoArgs){
   csize_t numGenes = geneCorrData->size();
 
 
-  for(size_t y = (numTFs * numerator) / denominator; 
+  for(size_t y = (numTFs * numerator) / denominator;
                       y < (numTFs * (numerator+1)) / denominator; y++){
     for(size_t x = 0; x < numGenes; x++){
       cf64 abCrossSum = getSumOfMultipliedArrays(
-                        (*geneCorrData)[(*TFCorrData)[y]].exprData, 
+                        (*geneCorrData)[(*TFCorrData)[y]].exprData,
                         (*geneCorrData)[x].exprData, corrVecLeng);
       results[y][x] = getCenteredCorrelationBasic(sumsOfSquares[0][y],
                                       sumsOfSquares[1][x], abCrossSum);
@@ -462,7 +472,7 @@ void *tauCorrelationHelper(void *protoArgs){
   csize_t numGenes = geneCorrData->size();
 
 
-  for(size_t y = (numTFs * numerator) / denominator; 
+  for(size_t y = (numTFs * numerator) / denominator;
                       y < (numTFs * (numerator+1)) / denominator; y++){
     for(size_t x = 0; x < numGenes; x++){
       ssize_t coordinateDisccordinatePairTally = 0;
@@ -476,7 +486,7 @@ void *tauCorrelationHelper(void *protoArgs){
           coordinateDisccordinatePairTally--;
       }
       coordinateDisccordinatePairTally *= 2;
-      results[y][x] = ((f64) coordinateDisccordinatePairTally) / 
+      results[y][x] = ((f64) coordinateDisccordinatePairTally) /
                       (corrVecLeng*(corrVecLeng-1));
     }
   }
@@ -489,29 +499,29 @@ void *rankHelper(void *protoArgs){
   const RHS *args = (RHS*) protoArgs;
   void *tmpPtr;
   pair<f64, size_t> *toSort;
-  
+
   csize_t numerator = args->numerator;
   csize_t denominator = args->denominator;
   csize_t corrVecLeng = args->vecLeng;
   vector<GER> *geneCorrData = args->geneCorrData;
-  
+
   csize_t numGenes = geneCorrData->size();
 
   tmpPtr = malloc(sizeof(*toSort) * corrVecLeng);
   toSort = (pair<f64, size_t>*) tmpPtr;
 
-  for(size_t i = (numGenes * numerator) / denominator; 
+  for(size_t i = (numGenes * numerator) / denominator;
                     i < (numGenes * (numerator+1)) / denominator; i++){
     for(size_t j = 0; j < corrVecLeng; j++){
       toSort[j] = pair<f64, size_t>((*geneCorrData)[i].exprData[j],
                                                                     j);
     }
-    _sortDoubleSizeTPairLowToHigh(toSort, corrVecLeng);
+    sortDoubleSizeTPairLowToHigh(toSort, corrVecLeng);
     for(size_t j = 0; j < corrVecLeng; j++){
       (*geneCorrData)[i].exprData[toSort[j].second] = j;
     }
   }
-  
+
   free(toSort);
 
   return NULL;
@@ -567,7 +577,7 @@ f64** centerAndPrecompute(ED &fileData){
   }else{
     centerAndPrecomputeHelper((void*) instructions);
   }
-  
+
   for(size_t i = 0; i < fileData.TFCorrData.size(); i++){
     tr[0][i] = tr[1][fileData.TFCorrData[i]];
   }
@@ -634,13 +644,13 @@ unordered_map<string, char> TFList(const char *geneList){
 
 
 CMF calculateKendallsTauCorrelationCorrelationMatrix(const ED &input){
-  
+
   CMF tr;
   pthread_t *workers;
   struct tauCorrHelpStruct *instructions;
   int *toIgnore;
   void *tmpPtr;
-  
+
   tr.TFLabels = input.TFs;
   tr.GeneLabels = input.genes;
 
@@ -691,7 +701,107 @@ CMF calculateKendallsTauCorrelationCorrelationMatrix(const ED &input){
 }
 
 
-extern CMF generateMatrixFromFile(cs8 *expressionFile, cs8 *geneList, 
+void *weightedRankCorrelationHelper(void *protoArgs){
+  struct multithreadLoad *tempArgs = (struct multithreadLoad*) protoArgs;
+  struct WRCorrHelpStruct  *args = (struct WRCorrHelpStruct*) tempArgs->specifics;
+
+  csize_t numerator = tempArgs->numerator;
+  csize_t denominator = tempArgs->denominator;
+  csize_t n = args->vecLeng;
+  f64 **results = args->results;
+  const vector<size_t> *TFCorrData = args->TFCorrData;
+  const vector<GER> *geneCorrData = args->geneCorrData;
+  csize_t numTFs = TFCorrData->size();
+  csize_t numGenes = geneCorrData->size();
+
+
+  for(size_t y = (numTFs * numerator) / denominator;
+                      y < (numTFs * (numerator+1)) / denominator; y++){
+    for(size_t x = 0; x < numGenes; x++){
+
+      double w = 0;
+      for(size_t i = 0; i < n; i++){
+        const double vx = (*geneCorrData)[x].exprData[i];
+        const double vy = (*geneCorrData)[(*TFCorrData)[y]].exprData[i];
+        const double tmp = vx-vy;
+        w += tmp*tmp * ((n - vx + 1) + (n - vy + 1));
+      }
+
+      const double nSquared = n*n;
+      const double nCubed = n*n*n;
+      const double nFourth = n*n*n*n;
+      double rw = 1-(6/(nFourth + nCubed - nSquared - n))*w;
+      double rwVariance = (31 * nSquared + 60*n+26)/(30*(nCubed+nSquared-n-1));
+
+      double z = rw / sqrt(rwVariance);
+      //What follows is a simplified probability density function since we are
+      //working with a standard deviation of 1 and mean of 0. It looks wierd,
+      //but it *should* be correct.
+      //NOTE: this relies on M_PI being made available, which is technically
+      //non-standard, but common.
+      double pnorm = exp((z*z)/-2)/(2*M_PI);
+
+      results[y][x] = 2*pnorm;
+    }
+  }
+
+  return NULL;
+}
+
+
+CMF calculateWeightedRankCorrelationCorrelationMatrix(const ED &input){
+
+  CMF tr;
+  struct WRCorrHelpStruct instructions;
+  int *toIgnore;
+  void *tmpPtr;
+
+  tr.TFLabels = input.TFs;
+  tr.GeneLabels = input.genes;
+
+  tmpPtr = malloc(sizeof(*tr.fullMatrix) * input.TFCorrData.size());
+  tr.fullMatrix = (f64**) tmpPtr; //[TF index][gene index]
+  for(size_t i = 0; i < input.TFCorrData.size(); i++){
+    tmpPtr = malloc(sizeof(**tr.fullMatrix) * input.geneCorrData.size());
+    tr.fullMatrix[i] = (f64*) tmpPtr;
+  }
+
+
+  instructions.vecLeng = input.corrVecLeng;
+  instructions.results = tr.fullMatrix;
+  instructions.TFCorrData = &input.TFCorrData;
+  instructions.geneCorrData = &input.geneCorrData;
+
+
+  autoThreadLauncher(weightedRankCorrelationHelper, &instructions);
+
+  return tr;
+}
+
+
+//TODO: This is a structural and redundant hack, but certainly one borne of
+//practicality.  This should be restructured into something better, likely
+//passing around enum's.
+bool isCorrelationAvailable(const char *corrType){
+  s8 *corrTypeLowerCase;
+  bool tr = false;
+
+  corrTypeLowerCase = (s8*) malloc(strlen(corrType)+1);
+  for(size_t i = 0; i < strlen(corrType); i++)
+    corrTypeLowerCase[i] = tolower(corrType[i]);
+  corrTypeLowerCase[strlen(corrType)]=0;
+
+  if     (!strcmp("spearman",       corrTypeLowerCase)) tr = true;
+  else if(!strcmp("pearson",        corrTypeLowerCase)) tr = true;
+  else if(!strcmp("kendall",        corrTypeLowerCase)) tr = true;
+  else if(!strcmp("weighted-rank",  corrTypeLowerCase)) tr = true;
+
+  free(corrTypeLowerCase);
+  return tr;
+}
+
+
+extern CMF generateMatrixFromFile(cs8 *expressionFile, cs8 *geneList,
                                                   cs8 *correlationType){
   CMF tr;
   ED fileData;
@@ -703,13 +813,13 @@ extern CMF generateMatrixFromFile(cs8 *expressionFile, cs8 *geneList,
   for(size_t i = 0; i < strlen(correlationType); i++)
     corrTypeLowerCase[i] = tolower(correlationType[i]);
   corrTypeLowerCase[strlen(correlationType)]=0;
-  
+
   TFCheck = TFList(geneList);
   fileData = loadExpressionData(expressionFile, TFCheck);
-  
+
   if(!strcmp(corrTypeLowerCase, "pearson")){
     sumsOfSquares =  centerAndPrecompute(fileData);
-    tr = calculatePearsonCorrelationMatrix(fileData, 
+    tr = calculatePearsonCorrelationMatrix(fileData,
                                                 (cf64**) sumsOfSquares);
     free(sumsOfSquares[0]);
     free(sumsOfSquares[1]);
@@ -718,7 +828,7 @@ extern CMF generateMatrixFromFile(cs8 *expressionFile, cs8 *geneList,
     calculateRankCorrelationMatrix(fileData);
     //The difference between spearman and pearson
     sumsOfSquares =  centerAndPrecompute(fileData);
-    tr = calculatePearsonCorrelationMatrix(fileData, 
+    tr = calculatePearsonCorrelationMatrix(fileData,
                                                 (cf64**) sumsOfSquares);
     free(sumsOfSquares[0]);
     free(sumsOfSquares[1]);
@@ -726,12 +836,14 @@ extern CMF generateMatrixFromFile(cs8 *expressionFile, cs8 *geneList,
   }else if(!strcmp(corrTypeLowerCase, "kendall")){
     calculateRankCorrelationMatrix(fileData);
     tr = calculateKendallsTauCorrelationCorrelationMatrix(fileData);
+  }else if(!strcmp(corrTypeLowerCase, "weighted-rank")){
+    tr = calculateWeightedRankCorrelationCorrelationMatrix(fileData);
   }else{
     errno = EINVAL;
     tr.fullMatrix = NULL;
   }
   free(corrTypeLowerCase);
-  
+
   for(size_t i = 0; i < fileData.geneCorrData.size(); i++)
                           free(fileData.geneCorrData[i].exprData);
 

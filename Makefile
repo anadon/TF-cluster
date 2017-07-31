@@ -1,14 +1,14 @@
 CPP=g++
-#CFLAGS=-ggdb -O0 -pipe -Wall -Wextra -Wconversion -std=c++11 -march=native
+#CFLAGS=-ggdb -O1 -pipe -Wall -Wextra -Wconversion -std=c++0x -march=native
 CFLAGS=-O3 -pipe -Wall -Wextra -Wconversion -std=c++0x -march=native
 LIBS=-pthread
 CMTX=correlation-matrix.a
 
 EXEC=tf-cluster
 
-SOURCES=main.cpp auxillaryUtilities.cpp tripleLink.cpp geneData.cpp diagnostics.cpp correlation-matrix.cpp statistics.c
-OBJECTS=main.o   auxillaryUtilities.o   tripleLink.o   geneData.o diagnostics.o correlation-matrix.o statistics.o
-HEADERS=auxillaryUtilities.hpp edge.hpp geneData.hpp graph.hpp \
+SOURCES=main.cpp auxiliaryUtilities.cpp tripleLink.cpp geneData.cpp diagnostics.cpp correlation-matrix.cpp statistics.c
+OBJECTS=main.o   auxiliaryUtilities.o   tripleLink.o   geneData.o diagnostics.o correlation-matrix.o statistics.o
+HEADERS=auxiliaryUtilities.hpp edge.hpp geneData.hpp graph.hpp \
         tripleLink.hpp vertex.hpp diagnostics.hpp correlation-matrix.hpp statistics.h correlation-matrix.hpp
 #CMTX_INCLUDE=correlation-matrix.hpp statistics.h
 TEMPLATES=edge.t.hpp graph.t.hpp vertex.t.hpp \

@@ -41,6 +41,34 @@ using std::cout;
 using std::endl;
 
 ////////////////////////////////////////////////////////////////////////
+//PRIVATE FUNCTION DEFINITIONS//////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////
+
+template <typename T, typename U> void verifyGraphState(graph<T, U> *toEnforce){
+  for(size_t i = 0; i < toEnforce->getNumEdges(); i++){
+    edge<T, U> *target = toEnforce->getEdges()[i];
+    if(NULL == target) raise(SIGABRT);
+    if(target->edgeID != i) raise(SIGABRT);
+    if(target->left == NULL) raise(SIGABRT);
+    if(target->right == NULL) raise(SIGABRT);
+    if(target->left->getNumLeftEdges() <= target->leftEdgeIndex) raise(SIGABRT);
+    if(target->left->getLeftEdges()[target->leftEdgeIndex] != target) raise(SIGABRT);
+    if(target->right->getNumRightEdges() <= target->rightEdgeIndex) raise(SIGABRT);
+    if(target->right->getRightEdges()[target->rightEdgeIndex] != target) raise(SIGABRT);
+  }
+  for(size_t i = 0; i < toEnforce->getNumVertexes(); i++){
+    vertex<T, U> *target = toEnforce->getVertexes()[i];
+    if(NULL == target) raise(SIGABRT);
+    //if(target->getNumLeftEdges() > target->leftEdgesSize) raise(SIGABRT);
+    //if(target->getNumRightEdges() > target->rightEdgesSize) raise(SIGABRT);
+
+    for(auto i : target->connected){
+      if(i.second != toEnforce->getEdges()[i.second->edgeID]) raise(SIGABRT);
+    }
+  }
+}
+
+////////////////////////////////////////////////////////////////////////
 //FUNCTION DEFINITIONS//////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////
 
@@ -48,6 +76,7 @@ template <typename T, typename U> graph<T, U>::graph(){
   numVertexes = numEdges = vertexArraySize = edgeArraySize = 0;
   vertexArray = (vertex<T, U>**) NULL;
   edgeArray = (edge<T, U>**) NULL;
+  //verifyGraphState<T, U>(this);
 }
 
 
@@ -63,12 +92,22 @@ template <typename T, typename U> graph<T, U>::~graph(){
 
 template <typename T, typename U> U graph<T, U>::removeEdge(
                                                   edge<T, U> *toRemove){
-  const size_t edgeIndex = toRemove->edgeID;
+  //verifyGraphState<T, U>(this);
+
+const size_t edgeIndex = toRemove->edgeID;
   void *memCheck;
   U tr;
 
   if(edgeIndex >= numEdges) raise(SIGABRT);
-  if(toRemove != edgeArray[edgeIndex])  raise(SIGABRT);
+  if(toRemove != edgeArray[edgeIndex]){
+    int found = 0;
+    for(size_t i = 0; i < numEdges; i++)
+      if(edgeArray[i] == toRemove) found++;
+    if(0 == found) raise(SIGABRT);
+    if(1 != found) raise(SIGABRT);
+
+    raise(SIGABRT);
+  }
 
   tr = edgeArray[edgeIndex]->weight;
   --numEdges;
@@ -83,6 +122,7 @@ template <typename T, typename U> U graph<T, U>::removeEdge(
     edgeArray = NULL;
   }
 
+  //verifyGraphState<T, U>(this);
   return tr;
 }
 
@@ -98,9 +138,11 @@ template <typename T, typename U> T graph<T, U>::removeVertex(
   if(NULL == toRemove)  raise(SIGABRT);
   if(nodeIndex >= numVertexes)  raise(SIGABRT);
   if(toRemove != target)  raise(SIGABRT);
-  
-  while(target->getNumEdges())
-    removeEdge(target->getEdges()[target->getNumEdges()-1]);
+
+  while(target->getNumLeftEdges())
+    removeEdge(target->getLeftEdges()[target->getNumLeftEdges()-1]);
+  while(target->getNumRightEdges())
+    removeEdge(target->getRightEdges()[target->getNumRightEdges()-1]);
 
   T tr = vertexArray[nodeIndex]->value;
 
@@ -116,6 +158,7 @@ template <typename T, typename U> T graph<T, U>::removeVertex(
   memCheck = realloc(vertexArray, sizeof(*vertexArray) * numVertexes);
   vertexArray = (vertex<T, U>**) memCheck;
 
+  //verifyGraphState<T, U>(this);
   return tr;
 }
 
@@ -138,6 +181,7 @@ template <typename T, typename U> vertex<T, U>* graph<T, U>::addVertex(
   vertexArray[numVertexes] = new vertex<T, U>(numVertexes, data);
 
   numVertexes++;
+  //verifyGraphState<T, U>(this);
   return vertexArray[numVertexes-1];
 }
 
@@ -155,16 +199,20 @@ template <typename T, typename U> edge<T, U>* graph<T, U>::addEdge(
                                                               numEdges);
 
   numEdges++;
+  //verifyGraphState<T, U>(this);
   return edgeArray[numEdges-1];
 }
 
 
 template <typename T, typename U> edge<T, U>* graph<T, U>::addEdge(
                                                     edge<T, U> &toAdd){
-
-  return addEdge(vertexArray[geneNameToNodeID[toAdd.left->value]],
+  edge<T, U> *tr = addEdge(vertexArray[geneNameToNodeID[toAdd.left->value]],
                       vertexArray[geneNameToNodeID[toAdd.right->value]],
                                                           toAdd.weight);
+
+  //verifyGraphState<T, U>(this);
+
+  return tr;
 }
 
 
@@ -198,7 +246,9 @@ template <typename T, typename U> size_t graph<T, U>::getNumVertexes()
 
 template <typename T, typename U> vertex<T, U>*
                         graph<T, U>::addVertex(vertex<T, U> *newVertex){
-  return addVertex(newVertex->value);
+  vertex<T, U> *tr = addVertex(newVertex->value);
+  //verifyGraphState<T, U>(this);
+  return tr;
 }
 
 
@@ -243,6 +293,7 @@ template <typename T, typename U> void graph<T, U>::hintNumEdges(
     fprintf(stderr, "ERROR: Could not allocate edges\n"); fflush(stderr);
     raise(SIGABRT);
   }
+  //verifyGraphState<T, U>(this);
 }
 
 
@@ -263,6 +314,7 @@ template <typename T, typename U> void graph<T, U>::hintNumVertexes(
   }else{
     raise(SIGABRT);
   }
+  //verifyGraphState<T, U>(this);
 }
 
 
@@ -299,7 +351,7 @@ template <typename T, typename U> void graph<T, U>::ensureEdgeCapacity(
   }
   edgeArray = (edge<T, U>**) memCheck;
   edgeArraySize = nextSize;
-
+  //verifyGraphState<T, U>(this);
 }
 
 
@@ -317,6 +369,7 @@ template <typename T, typename U> void
   }
   vertexArray = (vertex<T, U>**) memCheck;
   vertexArraySize = nextSize;
+  //verifyGraphState<T, U>(this);
 }
 
 ////////////////////////////////////////////////////////////////////////

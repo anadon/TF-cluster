@@ -33,7 +33,7 @@ Input: 1 file name or input from stdin.
 #include <vector>
 
 
-#include "auxillaryUtilities.hpp"
+#include "auxiliaryUtilities.hpp"
 #include "correlation-matrix.hpp"
 #include "diagnostics.hpp"
 #include "edge.t.hpp"
@@ -114,18 +114,25 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state){
         exit(EINVAL);
       break;
     case 'c':
-      args->corrMethod = arg;
-      if(strcmp("pearson", arg)) break;
-      if(strcmp("spearman", arg)) break;
-      else{
+      if(!isCorrelationAvailable(arg)){
         cerr << "Correlation method \"" << arg << "\" is not supported"
-             << endl;
+            << endl;
         exit(EINVAL);
       }
+
+      char *corrTypeLowerCase;
+      corrTypeLowerCase = (char*) malloc(strlen(arg)+1);
+      for(size_t i = 0; i < strlen(arg); i++)
+        corrTypeLowerCase[i] = tolower(arg[i]);
+      corrTypeLowerCase[strlen(arg)]=0;
+
+      args->corrMethod = corrTypeLowerCase;
+      //NOTE: arg may need to be freed here; I'm not sure.
+      break;
     default:
       return ARGP_ERR_UNKNOWN;
   }
-  
+
   return 0;
 }
 
@@ -155,8 +162,8 @@ int main(int argc, char **argv){
   argp_parse(&interpreter, argc, argv, 0, 0, &settings);
 
 
-  protoGraph = generateMatrixFromFile(settings.exprData, 
-                                          settings.tflist, "spearman");
+  protoGraph = generateMatrixFromFile(settings.exprData,
+                                          settings.tflist, settings.corrMethod);
   if(NULL == protoGraph.fullMatrix){
     cerr << "There was a fatal error in generating the correlation "
             "matrix" << endl;
@@ -165,14 +172,19 @@ int main(int argc, char **argv){
   if(settings.keepTopN >= protoGraph.GeneLabels.size()){
     cerr << "Too few genes to perform an analysis." << endl;
     return 0;
-  }  
-  
+  }
+
+  //printCorrelationMatrix(protoGraph);
+
   sccm = constructCoincidenceMatrix(protoGraph, settings);
-  
+
+  //printf("\n\n");
   //printCoincidenceMatrix(sccm, settings.keepTopN, protoGraph.TFLabels);
-  
+
   corrData = constructGraph(sccm, protoGraph, settings);
   delete sccm;
+
+  //printGraphTopOneHundred(corrData, protoGraph.GeneLabels);
 
   result = tripleLink(corrData, settings);
 

@@ -24,7 +24,7 @@
 #include <queue>
 #include <vector>
 
-#include "auxillaryUtilities.hpp"
+#include "auxiliaryUtilities.hpp"
 #include "edge.t.hpp"
 #include "vertex.t.hpp"
 #include "graph.t.hpp"
@@ -132,7 +132,7 @@ void markConnectedVertexesSingle(vertex<geneData, u8> *markFrom,
  *  Appropriately mark all vertexes connected to markFrom, and add ones
  * who are well connected to the current process queue.  Also remove
  * traversed edges on markFrom, as they are only needed once.  Has a
- * requirement of top 2 strong edges for inclusion into the current 
+ * requirement of top 2 strong edges for inclusion into the current
  * cluster.
  *
  * @param[in,out] markFrom Vertex to mark all connecting vertexes from.
@@ -269,11 +269,17 @@ bool markConnectedVertexTriple(cu8 edgeWeight,
 void markConnectedVertexesSingle(vertex<geneData, u8> *markFrom,
               cu8 high, cu8 med, graph<geneData, u8> *geneNetwork,
                                           queue<geneData> &toProcessTo){
-  for(size_t i = 0; i < markFrom->getNumEdges(); i++)
-    if(markConnectedVertexSingle(markFrom->getEdges()[i]->weight,
-            markFrom->getEdges()[i]->other(markFrom), high, med,
-                                                          toProcessTo)){
-      geneNetwork->removeEdge(markFrom->getEdges()[i]);
+  for(size_t i = 0; i < markFrom->getNumLeftEdges(); i++)
+    if(markConnectedVertexSingle(markFrom->getLeftEdges()[i]->weight,
+            markFrom->getLeftEdges()[i]->other(markFrom), high, med, toProcessTo)){
+      geneNetwork->removeEdge(markFrom->getLeftEdges()[i]);
+      i = 0;
+    }
+
+  for(size_t i = 0; i < markFrom->getNumRightEdges(); i++)
+    if(markConnectedVertexSingle(markFrom->getRightEdges()[i]->weight,
+            markFrom->getRightEdges()[i]->other(markFrom), high, med, toProcessTo)){
+      geneNetwork->removeEdge(markFrom->getRightEdges()[i]);
       i = 0;
     }
 }
@@ -282,12 +288,18 @@ void markConnectedVertexesSingle(vertex<geneData, u8> *markFrom,
 void markConnectedVertexesDouble(vertex<geneData, u8> *markFrom,
               cu8 high, cu8 med, graph<geneData, u8> *geneNetwork,
                                           queue<geneData> &toProcessTo){
-  for(size_t i = 0; i < markFrom->getNumEdges(); i++)
-    if(markConnectedVertexDouble(markFrom->getEdges()[i]->weight,
-            markFrom->getEdges()[i]->other(markFrom), high, med,
-                                                          toProcessTo)){
-      geneNetwork->removeEdge(markFrom->getEdges()[i]);
+  for(size_t i = 0; i < markFrom->getNumLeftEdges(); i++)
+    if(markConnectedVertexDouble(markFrom->getLeftEdges()[i]->weight,
+            markFrom->getLeftEdges()[i]->other(markFrom), high, med, toProcessTo)){
+      geneNetwork->removeEdge(markFrom->getLeftEdges()[i]);
       i = 0;
+    }
+
+  for(size_t i = 0; i < markFrom->getNumRightEdges(); i++)
+    if(markConnectedVertexDouble(markFrom->getRightEdges()[i]->weight,
+      markFrom->getRightEdges()[i]->other(markFrom), high, med, toProcessTo)){
+        geneNetwork->removeEdge(markFrom->getRightEdges()[i]);
+        i = 0;
     }
 }
 
@@ -295,11 +307,18 @@ void markConnectedVertexesDouble(vertex<geneData, u8> *markFrom,
 void markConnectedVertexesTriple(vertex<geneData, u8> *markFrom,
               cu8 high, cu8 med, graph<geneData, u8> *geneNetwork,
                                           queue<geneData> &toProcessTo){
-  for(size_t i = 0; i < markFrom->getNumEdges(); i++)
-    if(markConnectedVertexTriple(markFrom->getEdges()[i]->weight,
-            markFrom->getEdges()[i]->other(markFrom), high, med,
+  for(size_t i = 0; i < markFrom->getNumLeftEdges(); i++)
+    if(markConnectedVertexTriple(markFrom->getLeftEdges()[i]->weight,
+            markFrom->getLeftEdges()[i]->other(markFrom), high, med,
                                                           toProcessTo)){
-      geneNetwork->removeEdge(markFrom->getEdges()[i]);
+      geneNetwork->removeEdge(markFrom->getLeftEdges()[i]);
+      i = 0;
+    }
+
+  for(size_t i = 0; i < markFrom->getNumRightEdges(); i++)
+    if(markConnectedVertexTriple(markFrom->getRightEdges()[i]->weight,
+          markFrom->getRightEdges()[i]->other(markFrom), high, med, toProcessTo)){
+      geneNetwork->removeEdge(markFrom->getRightEdges()[i]);
       i = 0;
     }
 }
@@ -323,7 +342,7 @@ void removeWeakVerticies(graph<geneData, u8> *geneNetwork, cu8 high,
     for(size_t i = 0; i < geneNetwork->getNumVertexes(); i++){
       const vertex<geneData, u8> *target =
                                           geneNetwork->getVertexes()[i];
-      if(2 > target->getNumEdges()){
+      if(2 > (target->getNumLeftEdges() + target->getNumRightEdges())){
         geneNetwork->removeVertex(target);
         disconnectedVerticiesFound = true;
         continue;
@@ -331,11 +350,18 @@ void removeWeakVerticies(graph<geneData, u8> *geneNetwork, cu8 high,
 
       bool highFound, medFound;
       highFound = medFound = false;
-      for(size_t j = 0; j < target->getNumEdges()
+      for(size_t j = 0; j < target->getNumLeftEdges()
                                     && (!highFound || !medFound); j++){
-        if(target->getEdges()[j]->weight >= high && !highFound)
+        if(target->getLeftEdges()[j]->weight >= high && !highFound)
           highFound = true;
-        else if(target->getEdges()[j]->weight >= med)
+        else if(target->getLeftEdges()[j]->weight >= med)
+          medFound = true;
+      }
+      for(size_t j = 0; j < target->getNumRightEdges()
+                                    && (!highFound || !medFound); j++){
+        if(target->getRightEdges()[j]->weight >= high && !highFound)
+          highFound = true;
+        else if(target->getRightEdges()[j]->weight >= med)
           medFound = true;
       }
       if(!highFound || !medFound){
@@ -388,18 +414,18 @@ queue<size_t> tripleLinkIteration(graph<geneData, u8> *geneNetwork,
                                           geneNetwork, toProcessPrimer);
   toReturn.push(secondVertex->value.nameIndex);
   geneNetwork->removeVertex(secondVertex);
-  
+
   //Double Link phase
-  
+
   while(!toProcessPrimer.empty()){
     connectedVertex = geneNetwork->getVertexForValue(
                                               toProcessPrimer.front());
     toProcessPrimer.pop();
-    
+
     if(NULL == connectedVertex) continue;
-    
+
     toReturn.push(connectedVertex->value.nameIndex);
-    markConnectedVertexesDouble(connectedVertex, threeSigma, twoSigma, 
+    markConnectedVertexesDouble(connectedVertex, threeSigma, twoSigma,
                                             geneNetwork, toProcessMain);
     geneNetwork->removeVertex(connectedVertex);
   }
@@ -409,7 +435,7 @@ queue<size_t> tripleLinkIteration(graph<geneData, u8> *geneNetwork,
     connectedVertex = geneNetwork->getVertexForValue(
                                                 toProcessMain.front());
     toProcessMain.pop();
-    
+
     if(NULL == connectedVertex) continue;
 
     toReturn.push(connectedVertex->value.nameIndex);
@@ -426,13 +452,13 @@ queue< queue<size_t> > tripleLink(graph<geneData, u8> *geneNetwork,
                                         const struct config &settings){
   queue< queue<size_t> > toReturn;
 
-  removeWeakVerticies(geneNetwork, settings.threeSigmaAdj, 
+  removeWeakVerticies(geneNetwork, settings.threeSigmaAdj,
                                                   settings.twoSigmaAdj);
 
   while(geneNetwork->getNumEdges() > 0){
-    toReturn.push(tripleLinkIteration(geneNetwork, 
+    toReturn.push(tripleLinkIteration(geneNetwork,
                         settings.threeSigmaAdj, settings.twoSigmaAdj));
-    removeWeakVerticies(geneNetwork, settings.threeSigmaAdj, 
+    removeWeakVerticies(geneNetwork, settings.threeSigmaAdj,
                                                   settings.twoSigmaAdj);
   }
 

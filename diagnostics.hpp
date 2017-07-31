@@ -29,7 +29,7 @@
 #include <string>
 #include <vector>
 
-#include "auxillaryUtilities.hpp"
+#include "auxiliaryUtilities.hpp"
 #include "upper-diagonal-square-matrix.t.hpp"
 
 ////////////////////////////////////////////////////////////////////////
@@ -54,7 +54,7 @@ void printClusters(queue< queue<size_t> > clusters,
                                             const vector<string> &TFs);
 
 
-void printCoincidenceMatrix(UpperDiagonalSquareMatrix<u8> *matrix, 
+void printCoincidenceMatrix(UpperDiagonalSquareMatrix<u8> *matrix,
                                 cu8 maxMatch, const vector<string> TFs);
 
 
@@ -99,8 +99,11 @@ void printProtoGraph(const CMF &toPrint);
  * @param[in] toPrint The graph structure to print
  * @param[in] labels
  **********************************************************************/
-void printGraph(graph<geneData, f64> *toPrint,
-                                          const vector<string> &labels);
+void printGraph(graph<geneData, f64> *toPrint, const vector<string> &labels);
+
+
+
+void printGraphTopOneHundred(graph<geneData, f64> *toPrint, const vector<string> &labels);
 
 
 ////////////////////////////////////////////////////////////////////////

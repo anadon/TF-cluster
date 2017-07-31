@@ -36,32 +36,52 @@
 
 template <typename T, typename U> vertex<T, U>::vertex(size_t index,
                               T data):  vertexIndex(index), value(data){
-  numEdges = edgesSize = 0;
-  edges = (edge<T, U>**) NULL;
+  numLeftEdges = numRightEdges = leftEdgesSize = rightEdgesSize = 0;
+  leftEdges = rightEdges = (edge<T, U>**) NULL;
 }
 
 
 template <typename T, typename U> inline size_t
-                                      vertex<T, U>::getNumEdges() const{
-  return numEdges;
+                                      vertex<T, U>::getNumLeftEdges() const{
+  return numLeftEdges;
+}
+
+
+template <typename T, typename U> inline size_t
+                                      vertex<T, U>::getNumRightEdges() const{
+  return numRightEdges;
 }
 
 
 template <typename T, typename U> vertex<T, U>::~vertex(){
-  if(0 != numEdges) raise(SIGABRT);
+  if(0 != numLeftEdges) raise(SIGABRT);
+  if(0 != numRightEdges) raise(SIGABRT);
 }
 
 
-template <typename T, typename U> size_t vertex<T, U>::addEdge(
+template <typename T, typename U> size_t vertex<T, U>::addLeftEdge(
                                                 edge<T, U> *toRegister){
-  ensureEdgeCapacity(numEdges+1);
-  edges[numEdges] = toRegister;
+  ensureEdgeCapacity(numLeftEdges+1);
+  leftEdges[numLeftEdges] = toRegister;
   pair<vertex<T, U>*, edge<T, U>* > toInsert;
   toInsert = pair<vertex<T, U>*, edge<T, U>* >(toRegister->other(this), toRegister);
   connected.insert(toInsert);
-  numEdges++;
+  numLeftEdges++;
 
-  return numEdges-1;
+  return numLeftEdges-1;
+}
+
+
+template <typename T, typename U> size_t vertex<T, U>::addRightEdge(
+                                                edge<T, U> *toRegister){
+  ensureEdgeCapacity(numRightEdges+1);
+  rightEdges[numRightEdges] = toRegister;
+  pair<vertex<T, U>*, edge<T, U>* > toInsert;
+  toInsert = pair<vertex<T, U>*, edge<T, U>* >(toRegister->other(this), toRegister);
+  connected.insert(toInsert);
+  numRightEdges++;
+
+  return numRightEdges-1;
 }
 
 
@@ -70,45 +90,99 @@ template <typename T, typename U> void vertex<T, U>::removeEdge(
   void *memCheck;
   edge<T, U> *tmp;
   size_t targetEdgeIndex = 0;
+  bool isleft;
+
+  if(this == toRemove->left){
+    int found = 0;
+    for(size_t i = 0; i < numLeftEdges; i++){
+      if(leftEdges[i] == toRemove){
+        found++;
+      }
+    }
+    if(found == 0) raise(SIGABRT);
+    if(found != 1) raise(SIGABRT);
+    isleft = true;
+  }else if(this == toRemove->right){
+    int found = 0;
+    for(size_t i = 0; i < numRightEdges; i++)
+      if(rightEdges[i] == toRemove) found++;
+    if(0 == found) raise(SIGABRT);
+    if(1 != found) raise(SIGABRT);
+    isleft = false;
+  }else raise(SIGABRT);
 
 
-  numEdges--;
 
   //check if this is the right or left of the edge, error if edge
   //doesn't connect this node/vertex
-  if(toRemove->leftEdgeIndex <= numEdges
-                        && toRemove == edges[toRemove->leftEdgeIndex]){
+  if(isleft){
+    if(toRemove->leftEdgeIndex >= numLeftEdges)
+      raise(SIGABRT);
+    if(toRemove != leftEdges[toRemove->leftEdgeIndex]){
+      raise(SIGABRT);
+    }
     targetEdgeIndex = toRemove->leftEdgeIndex;
-  }else if(toRemove->rightEdgeIndex <= numEdges
-                        && toRemove == edges[toRemove->rightEdgeIndex]){
-    targetEdgeIndex = toRemove->rightEdgeIndex;
+    isleft = true;
   }else{
-    raise(SIGABRT);
+    if(toRemove->rightEdgeIndex >= numRightEdges)
+      raise(SIGABRT);
+    if(toRemove != rightEdges[toRemove->rightEdgeIndex]){
+      raise(SIGABRT);
+    }
+    targetEdgeIndex = toRemove->rightEdgeIndex;
+    isleft = false;
   }
 
-  //swap edge this is removing to the end
-  tmp = edges[numEdges];
-  edges[numEdges] = edges[targetEdgeIndex];
-  edges[targetEdgeIndex] = tmp;
+  if(isleft){
+    numLeftEdges--;
+
+    //swap edge this is removing to the end
+    tmp = leftEdges[numLeftEdges];
+    leftEdges[numLeftEdges] = leftEdges[targetEdgeIndex];
+    leftEdges[targetEdgeIndex] = tmp;
+  }else{
+    numRightEdges--;
+
+    //swap edge this is removing to the end
+    tmp = rightEdges[numRightEdges];
+    rightEdges[numRightEdges] = rightEdges[targetEdgeIndex];
+    rightEdges[targetEdgeIndex] = tmp;
+  }
 
   //update the swapped edge's location in this structure so it still
   //knows where it is in this vertex/node
-  if(this == edges[targetEdgeIndex]->left)
-    edges[targetEdgeIndex]->leftEdgeIndex = targetEdgeIndex;
+  if(isleft && this != leftEdges[targetEdgeIndex]->left)
+    raise(SIGABRT);
+  if(!isleft && this != rightEdges[targetEdgeIndex]->right)
+    raise(SIGABRT);
+
+  if(isleft)
+    leftEdges[targetEdgeIndex]->leftEdgeIndex = targetEdgeIndex;
   else
-    edges[targetEdgeIndex]->rightEdgeIndex = targetEdgeIndex;
+    rightEdges[targetEdgeIndex]->rightEdgeIndex = targetEdgeIndex;
 
   //deallocate the last edge pointer (but don't actually delete --
   //that's the network's job).
-  if(0 < numEdges){
-    memCheck = realloc(edges, numEdges * sizeof(*edges));
-    edges = (edge<T, U>**) memCheck;
+  if(isleft){
+    if(0 < numLeftEdges){
+      memCheck = realloc(leftEdges, numLeftEdges * sizeof(*leftEdges));
+      leftEdges = (edge<T, U>**) memCheck;
+    }else{
+      free(leftEdges);
+      leftEdges = NULL;
+    }
+    leftEdgesSize = numLeftEdges;
   }else{
-    free(edges);
-    edges = NULL;
+    if(0 < numRightEdges){
+      memCheck = realloc(rightEdges, numRightEdges * sizeof(*rightEdges));
+      rightEdges = (edge<T, U>**) memCheck;
+    }else{
+      free(rightEdges);
+      rightEdges = NULL;
+    }
+    rightEdgesSize = numRightEdges;
   }
-  edgesSize = numEdges;
-  
+
   connected.erase(toRemove->other(this));
 }
 
@@ -119,14 +193,25 @@ template <typename T, typename U> inline bool vertex<T, U>::operator==(
 }
 
 
-template <typename T, typename U> edge<T, U>** vertex<T, U>::getEdges(){
-  return edges;
+template <typename T, typename U> edge<T, U>** vertex<T, U>::getLeftEdges(){
+  return leftEdges;
+}
+
+
+template <typename T, typename U> edge<T, U>** vertex<T, U>::getRightEdges(){
+  return rightEdges;
 }
 
 
 template <typename T, typename U> const edge<T, U>**
-                                        vertex<T, U>::getEdges() const{
-  return (const edge<T, U>**) edges;
+                                        vertex<T, U>::getLeftEdges() const{
+  return (const edge<T, U>**) leftEdges;
+}
+
+
+template <typename T, typename U> const edge<T, U>**
+                                        vertex<T, U>::getRightEdges() const{
+  return (const edge<T, U>**) rightEdges;
 }
 
 
@@ -134,25 +219,34 @@ template <typename T, typename U> void vertex<T, U>::hintNumEdges(
                                               const size_t suggestSize){
   void *tmpPtr;
 
-  if(suggestSize <= numEdges) return;
+  if(suggestSize <= numLeftEdges) return;
+  if(suggestSize <= numRightEdges) return;
 
-  tmpPtr = realloc(edges, sizeof(*edges) * suggestSize);
+  tmpPtr = realloc(leftEdges, sizeof(*leftEdges) * suggestSize);
   if(NULL == tmpPtr) raise(SIGABRT);
-  edges = (edge<T, U>**) tmpPtr;
+  leftEdges = (edge<T, U>**) tmpPtr;
 
-  edgesSize = suggestSize;
+  tmpPtr = realloc(rightEdges, sizeof(*rightEdges) * suggestSize);
+  if(NULL == tmpPtr) raise(SIGABRT);
+  rightEdges = (edge<T, U>**) tmpPtr;
+
+  leftEdgesSize = suggestSize;
+  rightEdgesSize = suggestSize;
 }
 
 
 template <typename T, typename U> void vertex<T, U>::shrinkToFit(){
-  hintNumEdges(numEdges);
+  hintNumEdges(numLeftEdges);
+  hintNumEdges(numRightEdges);
 }
 
 
 template <typename T, typename U> void vertex<T, U>::ensureEdgeCapacity(
                                                     const size_t size){
-  while(size > edgesSize)
-    hintNumEdges(1 + (edgesSize << 1));
+  while(size > leftEdgesSize)
+    hintNumEdges(1 + (leftEdgesSize << 1));
+  while(size > rightEdgesSize)
+    hintNumEdges(1 + (rightEdgesSize << 1));
 }
 
 

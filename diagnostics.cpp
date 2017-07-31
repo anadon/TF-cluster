@@ -56,7 +56,7 @@ void printClusters(queue< queue<size_t> > clusters,
 }
 
 
-void printCoincidenceMatrix(UpperDiagonalSquareMatrix<u8> *matrix, 
+void printCoincidenceMatrix(UpperDiagonalSquareMatrix<u8> *matrix,
                                 cu8 maxMatch, const vector<string> TFs){
   f64 **mtr;
   size_t n = matrix->getSideLength();
@@ -88,7 +88,7 @@ void printCorrelationMatrix(const CMF &protoGraph){
   printf("\t");
   for(size_t i = 0; i < protoGraph.GeneLabels.size();i++)
     printf("%s\t", protoGraph.GeneLabels[i].c_str());
-
+  printf("\n");
 
   for(size_t i = 0; i < protoGraph.TFLabels.size(); i++){
     printf("%s\t", protoGraph.TFLabels[i].c_str());
@@ -101,7 +101,7 @@ void printCorrelationMatrix(const CMF &protoGraph){
 }
 
 
-void graphvizRepresentation(graph<geneData, f64> *corrData, 
+void graphvizRepresentation(graph<geneData, f64> *corrData,
                                                 vector<string> labels){
   cout << "digraph rep{" << endl;
   cout << endl;
@@ -111,20 +111,18 @@ void graphvizRepresentation(graph<geneData, f64> *corrData,
   for(size_t i = 0; i < corrData->getNumVertexes(); i++){
     cout << labels[corrData->getVertexes()[i]->value.nameIndex] << endl;
   }
-  
+
   for(size_t i = 0; i < corrData->getNumVertexes(); i++){
     vertex<geneData, f64> *targetV;
     targetV = corrData->getVertexes()[i];
-    for(size_t j = 0; j < targetV->getNumEdges(); j++){
+    for(size_t j = 0; j < targetV->getNumLeftEdges(); j++){
       edge<geneData, f64> *targetE;
-      targetE = corrData->getVertexes()[i]->getEdges()[j];
-      if(targetV == targetE->left){
-        cout << labels[targetE->left->value.nameIndex] << " -> ";
-        cout << labels[targetE->right->value.nameIndex] << " ;" << endl;
-      }
+      targetE = corrData->getVertexes()[i]->getLeftEdges()[j];
+      cout << labels[targetE->left->value.nameIndex] << " -> ";
+      cout << labels[targetE->right->value.nameIndex] << " ;" << endl;
     }
   }
-  
+
   cout << "}";
 }
 
@@ -138,7 +136,7 @@ void printEdgeWeights(graph<geneData, u8> *corrData){
 void printProtoGraph(const CMF &toPrint){
   for(size_t i = 0; i < toPrint.numRows(); i++){
     for(size_t j = 0; j < toPrint.numCols(); j++){
-      fprintf(stdout, "%s\t%s\t%lf\n", toPrint.TFLabels[i].c_str(), 
+      fprintf(stdout, "%s\t%s\t%lf\n", toPrint.TFLabels[i].c_str(),
                       toPrint.GeneLabels[j].c_str(), toPrint.fullMatrix[i][j]);
     }
   }
@@ -148,18 +146,41 @@ void printProtoGraph(const CMF &toPrint){
 void printGraph(graph<geneData, f64> *toPrint,
                                           const vector<string> &labels){
   for(size_t i = 0; i < toPrint->getNumVertexes(); i++){
-    for(size_t j = 0; j < toPrint->getVertexes()[i]->getNumEdges();
-                                                                  j++){
+    for(size_t j = 0; j < toPrint->getVertexes()[i]->getNumLeftEdges(); j++){
       fprintf(stderr, "%s\t%s\t%lf\n",
           labels[toPrint->getVertexes()[i]->value.nameIndex].c_str(),
-labels[toPrint->getVertexes()[i]->getEdges()[j]->other(toPrint->getVertexes()[i])->value.nameIndex].c_str(),
-                    toPrint->getVertexes()[i]->getEdges()[j]->weight);
+labels[toPrint->getVertexes()[i]->getLeftEdges()[j]->other(toPrint->getVertexes()[i])->value.nameIndex].c_str(),
+                    toPrint->getVertexes()[i]->getLeftEdges()[j]->weight);
     }
     fprintf(stderr, " ]\n\n"
 "========================================================================"
 "\n\n");
   }
 }
+
+
+/*
+void printGraphTopOneHundred(graph<geneData, f64> *toPrint, const vector<string> &labels){
+  for(size_t i = 0; i < toPrint->getNumVertexes(); i++){
+    pair<double, size_t> *topLinks = (pair<double, size_t>*) malloc(sizeog(pair<double, size_t>) * toPrint->getVertexes()[i]->getNumEdges());
+    for(size_t j = 0; j < toPrint->getVertexes()[i]->getNumEdges(); j++){
+      topLinks.push_back(pair<double, size_t>(toPrint->getVertexes()[i]->getEdges()[j]->weight, j);
+    }
+
+    _sortDoubleSizeTPairHighToLow(topLinks, toPrint->getVertexes()[i]->getNumEdges());
+
+    for(size_t j = 0; j < 100;
+                                                                  j++){
+      fprintf(stderr, "%s\t%s\t%lf\n",
+          labels[toPrint->getVertexes()[i]->value.nameIndex].c_str(),
+labels[toPrint->getVertexes()[i]->getEdges()[topLinks[j].second]->other(toPrint->getVertexes()[i])->value.nameIndex].c_str(),
+                    toPrint->getVertexes()[i]->getEdges()[topLinks[j].second]->weight);
+    }
+    fprintf(stderr, " ]\n\n"
+"========================================================================"
+"\n\n");
+  }
+}//*/
 
 
 ////////////////////////////////////////////////////////////////////////

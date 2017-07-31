@@ -52,11 +52,11 @@ template<typename T> pair<size_t, size_t> UpperDiagonalSquareMatrix<T>::
   if(w >= numberOfElements()){
     return pair<size_t, size_t>(-1, -1);
   }
-  
+
   csize_t wPrime = numberOfElements() - w - 1;
   y = n - floorl(0.5 + sqrtl(1L+8*wPrime)/2);
   x = w - ((n*y) - (y * (y+1))/2);
-  
+
   return pair<size_t, size_t>(x, y);
 }
 
@@ -79,12 +79,12 @@ template<typename T> UpperDiagonalSquareMatrix<T>
   //  throw 22;
   //}
   n = sideLength;
-  
+
   void *tmpPtr;
   size_t allocSize = sizeof(T) * numberOfElements();
   tmpPtr = malloc(allocSize);
   oneDMatrix = (T*) tmpPtr;
-  
+
 }
 
 
@@ -97,7 +97,7 @@ template <typename T> UpperDiagonalSquareMatrix<T>
 template <typename T> T UpperDiagonalSquareMatrix<T>
                         ::getValueAtIndex(size_t x, size_t y){
   if(x >=n || y >= n) return oneDMatrix[-1];
-  
+
   if(x >= y)
     return oneDMatrix[XYToW(x, y)];
   else
@@ -119,7 +119,7 @@ template <typename T> T* UpperDiagonalSquareMatrix<T>
 template <typename T> void UpperDiagonalSquareMatrix<T>
                     ::setValueAtIndex(size_t x, size_t y, T value){
   if(x >=n || y >= n) oneDMatrix[-1] = -1;
-  
+
   if(x >= y)
     oneDMatrix[XYToW(x, y)] = value;
   else

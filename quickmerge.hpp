@@ -23,6 +23,7 @@
 
 #include <utility>
 #include <cstdlib>
+#include <cstring>
 
 using std::pair;
 using std::size_t;
@@ -33,22 +34,22 @@ using std::size_t;
 ////////////////////////////////////////////////////////////////////////
 
 
-void _sortDoubleSizeTPairHighToLow(pair<f64, size_t> *toSort,
-                                                          csize_t size);
+template <typename T> void sortDoubleSizeTPairHighToLow(pair<f64, T> *toSort,
+                                                          const size_t size);
 
 
-void _sortDoubleSizeTPairHighToLowHelper(pair<f64, size_t> *toSort,
-                csize_t leftIndex, csize_t rightIndex, csize_t endIndex,
-                                          pair<f64, size_t> *sortSpace);
+template <typename T> void _sortDoubleSizeTPairHighToLowHelper(pair<f64, T> *toSort,
+                const size_t leftIndex, const size_t rightIndex, const size_t endIndex,
+                                          pair<f64, T> *sortSpace);
 
 
-void _sortDoubleSizeTPairLowToHigh(pair<f64, size_t> *toSort,
-                                                          csize_t size);
+template <typename T> void sortDoubleSizeTPairLowToHigh(pair<f64, T> *toSort,
+                                                          const size_t size);
 
 
-void _sortDoubleSizeTPairLowToHighHelper(pair<f64, size_t> *toSort,
-                csize_t leftIndex, csize_t rightIndex, csize_t endIndex,
-                                          pair<f64, size_t> *sortSpace);
+template <typename T> void _sortDoubleSizeTPairLowToHighHelper(pair<f64, T> *toSort,
+                const size_t leftIndex, const size_t rightIndex, const size_t endIndex,
+                                          pair<f64, T> *sortSpace);
 
 
 
@@ -56,8 +57,8 @@ void _sortDoubleSizeTPairLowToHighHelper(pair<f64, size_t> *toSort,
 //FUNCTION DEFINITIONS//////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////
 
-void _sortDoubleSizeTPairHighToLow(pair<f64, size_t> *toSort,
-                                                          csize_t size){
+template <typename T> void sortDoubleSizeTPairHighToLow(pair<f64, T> *toSort,
+                                                          const size_t size){
   size_t numRising;
   size_t i;
   void *tmpPtr;
@@ -124,9 +125,9 @@ void _sortDoubleSizeTPairHighToLow(pair<f64, size_t> *toSort,
 }
 
 
-void _sortDoubleSizeTPairHighToLowHelper(pair<f64, size_t> *toSort,
-                csize_t leftIndex, csize_t rightIndex, csize_t endIndex,
-                                          pair<f64, size_t> *sortSpace){
+template <typename T> void _sortDoubleSizeTPairHighToLowHelper(pair<f64, T> *toSort,
+                const size_t leftIndex, const size_t rightIndex, const size_t endIndex,
+                                          pair<f64, T> *sortSpace){
   size_t leftParser, rightParser, mergedParser;
 
   leftParser = leftIndex;
@@ -146,8 +147,8 @@ void _sortDoubleSizeTPairHighToLowHelper(pair<f64, size_t> *toSort,
 }
 
 
-void _sortDoubleSizeTPairLowToHigh(pair<f64, size_t> *toSort,
-                                                          csize_t size){
+template <typename T> void sortDoubleSizeTPairLowToHigh(pair<f64, T> *toSort,
+                                                          const size_t size){
   size_t numFalling;
   size_t i;
   void *tmpPtr;
@@ -169,7 +170,7 @@ void _sortDoubleSizeTPairLowToHigh(pair<f64, size_t> *toSort,
       toSort[(size-1) - i] = tmp;
     }
   }
-  
+
   size_t *indiciesOfInterest;
   tmpPtr = malloc(sizeof(*indiciesOfInterest) * size);
   indiciesOfInterest = (size_t*) tmpPtr;
@@ -189,7 +190,7 @@ void _sortDoubleSizeTPairLowToHigh(pair<f64, size_t> *toSort,
   size_t *newIndiciesOfInterest;
   tmpPtr = malloc(sizeof(*newIndiciesOfInterest) * size);
   newIndiciesOfInterest = (size_t*) tmpPtr;
-  
+
   while(IOISize > 2){
     size_t NIOISize = 0;
     for(i = 0; i < IOISize-2; i+=2){
@@ -216,9 +217,9 @@ void _sortDoubleSizeTPairLowToHigh(pair<f64, size_t> *toSort,
 }
 
 
-void _sortDoubleSizeTPairLowToHighHelper(pair<f64, size_t> *toSort,
-                csize_t leftIndex, csize_t rightIndex, csize_t endIndex,
-                                          pair<f64, size_t> *sortSpace){
+template <typename T> void _sortDoubleSizeTPairLowToHighHelper(pair<f64, T> *toSort,
+                const size_t leftIndex, const size_t rightIndex, const size_t endIndex,
+                                          pair<f64, T> *sortSpace){
   size_t leftParser, rightParser, mergedParser;
 
   leftParser = leftIndex;

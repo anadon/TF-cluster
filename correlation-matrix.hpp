@@ -161,7 +161,7 @@ ED loadExpressionData(const string &expressionFile);
  * @param[in] sumsOfSquares Some pre-calculated sum of squares for each
  *                          input row.
  **********************************************************************/
-CMF calculatePearsonCorrelationMatrix(const ED &input, 
+CMF calculatePearsonCorrelationMatrix(const ED &input,
                                                   cf64 *sumsOfSquares);
 
 
@@ -195,8 +195,14 @@ CMF calculateKendallsTauCorrelationCorrelationMatrix(const ED &input);
  *
  * @param[in] expressionFile File path to file with correlation data.
  **********************************************************************/
-CMF generateMatrixFromFile(cs8 *expressionFile, cs8 *geneList, 
+CMF generateMatrixFromFile(cs8 *expressionFile, cs8 *geneList,
                                                   cs8 *correlationType);
+
+
+/*******************************************************************//**
+ *  TODO: doc
+ **********************************************************************/
+bool isCorrelationAvailable(const char *corrType);
 
 ////////////////////////////////////////////////////////////////////////
 //END///////////////////////////////////////////////////////////////////

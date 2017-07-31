@@ -29,8 +29,8 @@ template <typename T, typename U> edge<T, U>::edge(vertex<T, U> *newLeft,
                 vertex<T, U> *newRight, U newWeight, size_t edgeIndex):
                 left(newLeft), right(newRight), weight(newWeight),
                                                       edgeID(edgeIndex){
-  leftEdgeIndex = left->addEdge(this);
-  rightEdgeIndex = right->addEdge(this);
+  leftEdgeIndex = left->addLeftEdge(this);
+  rightEdgeIndex = right->addRightEdge(this);
 }
 
 

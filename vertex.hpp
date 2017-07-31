@@ -44,11 +44,13 @@ template <typename T, typename U> class edge;
  **********************************************************************/
 template <typename T, typename U> class vertex{
   private:
-  edge<T, U> **edges;
-  size_t numEdges, edgesSize;
-  unordered_map<vertex<T, U>*, edge<T, U>*> connected;
+  edge<T, U> **leftEdges;
+  edge<T, U> **rightEdges;
+  size_t numLeftEdges, leftEdgesSize;
+  size_t numRightEdges, rightEdgesSize;
 
   public:
+  unordered_map<vertex<T, U>*, edge<T, U>*> connected;
   size_t vertexIndex;
   T value;
 
@@ -70,32 +72,34 @@ template <typename T, typename U> class vertex{
   ~vertex();
 
 
-/*******************************************************************//**
- *  Register an edge on called vertex.
- *
- * @param[in,out] toRegister Edge to register and register with by
-                             returning to it what index it is in the
-                             called vertex.
- **********************************************************************/
-  size_t addEdge(edge<T, U> *toRegister);
+  size_t addLeftEdge(edge<T, U> *toRegister);
 
 
-/*******************************************************************//**
- *  Get array of stored edges.
- **********************************************************************/
-  edge<T, U>** getEdges();
+  size_t addRightEdge(edge<T, U> *toRegister);
 
 
-/*******************************************************************//**
- *  Get array of stored edges.
- **********************************************************************/
-  const edge<T, U>** getEdges() const;
+  edge<T, U>** getLeftEdges();
+
+
+  edge<T, U>** getRightEdges();
+
+
+  const edge<T, U>** getLeftEdges() const;
+
+
+  const edge<T, U>** getRightEdges() const;
 
 
 /*******************************************************************//**
  *  Get number of stored edges.
  **********************************************************************/
-  size_t getNumEdges() const;
+  size_t getNumLeftEdges() const;
+
+
+/*******************************************************************//**
+*  Get number of stored edges.
+**********************************************************************/
+size_t getNumRightEdges() const;
 
 
 /*******************************************************************//**
@@ -128,8 +132,8 @@ template <typename T, typename U> class vertex{
  * same vertex from a single graph.
  **********************************************************************/
   bool operator==(const vertex<T, U> &other) const;
-  
-  
+
+
 /*******************************************************************//**
  * Tell if there is an edge connecting this vertex to another vertex
  **********************************************************************/
