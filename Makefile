@@ -6,10 +6,11 @@ CMTX=correlation-matrix.a
 
 EXEC=tf-cluster
 
-SOURCES=main.cpp auxiliaryUtilities.cpp tripleLink.cpp geneData.cpp diagnostics.cpp correlation-matrix.cpp statistics.c
-OBJECTS=main.o   auxiliaryUtilities.o   tripleLink.o   geneData.o diagnostics.o correlation-matrix.o statistics.o
+SOURCES=main.cpp auxiliaryUtilities.cpp tripleLink.cpp geneData.cpp diagnostics.cpp correlation-matrix.cpp statistics.c mine.c
+OBJECTS=main.o   auxiliaryUtilities.o   tripleLink.o   geneData.o diagnostics.o correlation-matrix.o statistics.o mine.o
 HEADERS=auxiliaryUtilities.hpp edge.hpp geneData.hpp graph.hpp \
-        tripleLink.hpp vertex.hpp diagnostics.hpp correlation-matrix.hpp statistics.h correlation-matrix.hpp
+        tripleLink.hpp vertex.hpp diagnostics.hpp correlation-matrix.hpp \
+				statistics.h correlation-matrix.hpp mine.h
 #CMTX_INCLUDE=correlation-matrix.hpp statistics.h
 TEMPLATES=edge.t.hpp graph.t.hpp vertex.t.hpp \
 					upper-diagonal-square-matrix.t.hpp

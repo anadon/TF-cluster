@@ -36,6 +36,7 @@
 
 #include "auxiliaryUtilities.hpp"
 #include "correlation-matrix.hpp"
+#include "mine.h"
 #include "statistics.h"
 #include "quickmerge.hpp"
 
@@ -102,6 +103,17 @@ struct WRCorrHelpStruct{
 };
 
 typedef struct WRCorrHelpStruct WRCHS;
+
+
+struct MaxInfoCorrHelpStruct{
+  size_t vecLeng;
+  double **results;
+  const vector<size_t> *TFCorrData;
+  const vector<GER> *geneCorrData;
+};
+
+typedef struct MaxInfoCorrHelpStruct MICHS;
+
 
 struct rankHelpStruct{
   size_t numerator;
@@ -495,6 +507,59 @@ void *tauCorrelationHelper(void *protoArgs){
 }
 
 
+void *maxInfoCorrHelper(void *protoArgs){
+  struct multithreadLoad *preArgs = (struct multithreadLoad*) protoArgs;
+  MICHS *args = (MICHS*) preArgs->specifics;
+
+  csize_t numerator = preArgs->numerator;
+  csize_t denominator = preArgs->denominator;
+  csize_t corrVecLeng = args->vecLeng;
+  f64 **results = args->results;
+  const vector<size_t> *TFCorrData = args->TFCorrData;
+  const vector<GER> *geneCorrData = args->geneCorrData;
+  csize_t numTFs = TFCorrData->size();
+  csize_t numGenes = geneCorrData->size();
+
+
+  for(size_t y = (numTFs * numerator) / denominator;
+                      y < (numTFs * (numerator+1)) / denominator; y++){
+    for(size_t x = 0; x < numGenes; x++){
+      // ssize_t coordinateDisccordinatePairTally = 0;
+      // for(size_t i = 0; i < corrVecLeng; i++){
+      //
+      //
+      //   double left, right;
+      //   left = (*geneCorrData)[x].exprData[i];
+      //   right = (*geneCorrData)[(*TFCorrData)[y]].exprData[i];
+      //   if(left == right)
+      //     coordinateDisccordinatePairTally++;
+      //   else
+      //     coordinateDisccordinatePairTally--;
+      // }
+      // coordinateDisccordinatePairTally *= 2;
+      // results[y][x] = ((f64) coordinateDisccordinatePairTally) /
+      //                 (corrVecLeng*(corrVecLeng-1));
+      mine_problem prob;
+      mine_parameter param;
+      mine_score *score;
+
+      param.alpha = 0.6;
+      param.c = 15;
+      param.est = EST_MIC_APPROX;
+
+      prob.n = corrVecLeng;
+      prob.x = (*geneCorrData)[x].exprData;
+      prob.y = (*geneCorrData)[(*TFCorrData)[y]].exprData;
+      score = mine_compute_score(&prob, &param);
+      results[y][x] = mine_mic(score);
+      mine_free_score(&score);
+    }
+  }
+
+  return NULL;
+}
+
+
 void *rankHelper(void *protoArgs){
   const RHS *args = (RHS*) protoArgs;
   void *tmpPtr;
@@ -701,13 +766,13 @@ CMF calculateKendallsTauCorrelationCorrelationMatrix(const ED &input){
 }
 
 
-void *weightedRankCorrelationHelper(void *protoArgs){
+/*void *weightedRankCorrelationHelper(void *protoArgs){
   struct multithreadLoad *tempArgs = (struct multithreadLoad*) protoArgs;
   struct WRCorrHelpStruct  *args = (struct WRCorrHelpStruct*) tempArgs->specifics;
 
   csize_t numerator = tempArgs->numerator;
   csize_t denominator = tempArgs->denominator;
-  csize_t n = args->vecLeng;
+  csize_t preN = args->vecLeng;
   f64 **results = args->results;
   const vector<size_t> *TFCorrData = args->TFCorrData;
   const vector<GER> *geneCorrData = args->geneCorrData;
@@ -715,14 +780,29 @@ void *weightedRankCorrelationHelper(void *protoArgs){
   csize_t numGenes = geneCorrData->size();
 
 
-  for(size_t y = (numTFs * numerator) / denominator;
-                      y < (numTFs * (numerator+1)) / denominator; y++){
-    for(size_t x = 0; x < numGenes; x++){
+
+
+  ae_int_t n = preN;
+
+
+
+  for(size_t preY = (numTFs * numerator) / denominator;
+                      preY < (numTFs * (numerator+1)) / denominator; preY++){
+    for(size_t preX = 0; preX < numGenes; preX++){
+
+      real_1d_array x, y;
+      x.setcontent(n, geneCorrData[preX].exprData);
+      y.setcontent(n, geneCorrData[(*TFCorrData)[preY]].exprData);
+      double a, b, c, d;
+      lsfitreport &rep
+
+
+      logisticfit4(x, y, n, a, b, c, d, rep);
 
       double w = 0;
-      for(size_t i = 0; i < n; i++){
-        const double vx = (*geneCorrData)[x].exprData[i];
-        const double vy = (*geneCorrData)[(*TFCorrData)[y]].exprData[i];
+      for(size_t i = 0; i < preN; i++){
+        const double vx = (*geneCorrData)[preX].exprData[i];
+        const double vy = (*geneCorrData)[].exprData[i];
         const double tmp = vx-vy;
         w += tmp*tmp * ((n - vx + 1) + (n - vy + 1));
       }
@@ -749,12 +829,18 @@ void *weightedRankCorrelationHelper(void *protoArgs){
 }
 
 
+/*
 CMF calculateWeightedRankCorrelationCorrelationMatrix(const ED &input){
 
   CMF tr;
   struct WRCorrHelpStruct instructions;
   int *toIgnore;
   void *tmpPtr;
+  f64 **sumsOfSquares;
+
+
+
+  sumsOfSquares =  centerAndPrecompute(fileData);
 
   tr.TFLabels = input.TFs;
   tr.GeneLabels = input.genes;
@@ -771,9 +857,100 @@ CMF calculateWeightedRankCorrelationCorrelationMatrix(const ED &input){
   instructions.results = tr.fullMatrix;
   instructions.TFCorrData = &input.TFCorrData;
   instructions.geneCorrData = &input.geneCorrData;
+  instructions.sumsOfSquares = sumsOfSquares;
 
 
   autoThreadLauncher(weightedRankCorrelationHelper, &instructions);
+
+
+
+    CMF tr;
+    pthread_t *workers;
+    struct corrHelpStruct *instructions;
+    int *toIgnore;
+    void *tmpPtr;
+
+    tr.TFLabels = input.TFs;
+    tr.GeneLabels = input.genes;
+
+    tmpPtr = malloc(sizeof(*tr.fullMatrix) * input.TFCorrData.size());
+    tr.fullMatrix = (f64**) tmpPtr; //[TF index][gene index]
+    for(size_t i = 0; i < input.TFCorrData.size(); i++){
+      tmpPtr = malloc(sizeof(**tr.fullMatrix)* input.geneCorrData.size());
+      tr.fullMatrix[i] = (f64*) tmpPtr;
+    }
+
+    //* TODO NOTE: this is a very GPU friendly set of operations -- OpenCL
+    csize_t numCPUs = thread::hardware_concurrency() < tr.numRows() ?
+                      thread::hardware_concurrency() : tr.numRows() ;
+    //* /
+
+    /*
+    csize_t numCPUs = 1;  //* /
+
+    tmpPtr = malloc(sizeof(*workers) * numCPUs);
+    workers = (pthread_t*) tmpPtr;
+    tmpPtr = malloc(sizeof(*instructions) * numCPUs);
+    instructions = (struct corrHelpStruct*) tmpPtr;
+
+
+    for(size_t i = 0; i < numCPUs; i++){
+      instructions[i] = {i,
+                         numCPUs,
+                         tr.fullMatrix,
+                         sumsOfSquares,
+                         &input
+                        };
+    }
+
+    if(numCPUs > 1){
+      //*
+      for(size_t i = 0; i < numCPUs; i++)
+        pthread_create(&workers[i], NULL, correlationHelper,
+                                                        &instructions[i]);
+
+      for(size_t i = 0; i < numCPUs; i++)
+        pthread_join(workers[i], (void**) &toIgnore);
+      //* /
+    }else{
+      correlationHelper((void*) instructions);
+    }
+
+    free(workers);
+    free(instructions);
+
+
+
+  return tr;
+}
+//*/
+
+
+CMF calculateMaxInfoCorrelationMatrix(const ED &input){
+
+  CMF tr;
+  MICHS instructions;
+  int *toIgnore;
+  void *tmpPtr;
+
+  tr.TFLabels = input.TFs;
+  tr.GeneLabels = input.genes;
+
+  tmpPtr = malloc(sizeof(*tr.fullMatrix) * input.TFCorrData.size());
+  tr.fullMatrix = (f64**) tmpPtr; //[TF index][gene index]
+  for(size_t i = 0; i < input.TFCorrData.size(); i++){
+    tmpPtr = malloc(sizeof(**tr.fullMatrix)* input.geneCorrData.size());
+    tr.fullMatrix[i] = (f64*) tmpPtr;
+  }
+
+
+  instructions.vecLeng = input.corrVecLeng;
+  instructions.results = tr.fullMatrix;
+  instructions.TFCorrData = &input.TFCorrData;
+  instructions.geneCorrData = &input.geneCorrData;
+
+
+  autoThreadLauncher(maxInfoCorrHelper, &instructions);
 
   return tr;
 }
@@ -794,7 +971,8 @@ bool isCorrelationAvailable(const char *corrType){
   if     (!strcmp("spearman",       corrTypeLowerCase)) tr = true;
   else if(!strcmp("pearson",        corrTypeLowerCase)) tr = true;
   else if(!strcmp("kendall",        corrTypeLowerCase)) tr = true;
-  else if(!strcmp("weighted-rank",  corrTypeLowerCase)) tr = true;
+  //else if(!strcmp("weighted-rank",  corrTypeLowerCase)) tr = true;
+  else if(!strcmp("maximum-information-coefficient",  corrTypeLowerCase)) tr = true;
 
   free(corrTypeLowerCase);
   return tr;
@@ -836,8 +1014,10 @@ extern CMF generateMatrixFromFile(cs8 *expressionFile, cs8 *geneList,
   }else if(!strcmp(corrTypeLowerCase, "kendall")){
     calculateRankCorrelationMatrix(fileData);
     tr = calculateKendallsTauCorrelationCorrelationMatrix(fileData);
-  }else if(!strcmp(corrTypeLowerCase, "weighted-rank")){
-    tr = calculateWeightedRankCorrelationCorrelationMatrix(fileData);
+  //}else if(!strcmp(corrTypeLowerCase, "weighted-rank")){
+  //  tr = calculateWeightedRankCorrelationCorrelationMatrix(fileData);
+  }else if(!strcmp(corrTypeLowerCase, "maximum-information-coefficient")){
+    tr = calculateMaxInfoCorrelationMatrix(fileData);
   }else{
     errno = EINVAL;
     tr.fullMatrix = NULL;
