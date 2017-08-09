@@ -179,7 +179,8 @@ int main(int argc, char **argv){
   sccm = constructCoincidenceMatrix(protoGraph, settings);
 
   //printf("\n\n");
-  //printCoincidenceMatrix(sccm, settings.keepTopN, protoGraph.TFLabels);
+  printCoincidenceMatrix(sccm, settings.keepTopN, protoGraph.TFLabels);
+  printf("\n\r---###???\n\r");
 
   corrData = constructGraph(sccm, protoGraph, settings);
   delete sccm;
